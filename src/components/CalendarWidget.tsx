@@ -43,7 +43,7 @@ export default function CalendarWidget({ transactions, onDayClick }: CalendarWid
       try {
         const dateStr = format(parseISO(tx.date), 'yyyy-MM-dd');
         if (tx.type === 'expense') {
-          expenses[dateStr] = (expenses[dateStr] || 0) + tx.amount;
+          expenses[dateStr] = (expenses[dateStr] || 0) + Math.abs(tx.amount);
         } else {
           incomes[dateStr] = (incomes[dateStr] || 0) + tx.amount;
         }
@@ -77,7 +77,7 @@ export default function CalendarWidget({ transactions, onDayClick }: CalendarWid
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '4px', fontSize: '0.7rem' }}>
         {expense > 0 && (
           <div style={{ color: 'var(--danger)', fontWeight: '600', marginBottom: '2px' }}>
-            -{Math.round(expense / 10000)}만
+            -{Math.round(Math.abs(expense) / 10000)}만
           </div>
         )}
         {income > 0 && (

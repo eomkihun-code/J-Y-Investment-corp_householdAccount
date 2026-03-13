@@ -40,8 +40,8 @@ export default function AnalyticsCharts({ transactions, onCategoryClick, selecte
         if (!acc[month]) {
           acc[month] = { name: month, 수입: 0, 지출: 0 };
         }
-        if (tx.type === 'income') acc[month].수입 += tx.amount;
-        if (tx.type === 'expense') acc[month].지출 += tx.amount;
+        if (tx.type === 'income') acc[month].수입 += Math.abs(tx.amount);
+        if (tx.type === 'expense') acc[month].지출 += Math.abs(tx.amount);
       } catch (e) {
         // 날짜 파싱 오류 무시
       }
