@@ -5,11 +5,7 @@ import {
   Plus, 
   LogOut,
   ShoppingCart,
-  Trash2,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  ArrowLeft
+  Trash2
 } from 'lucide-react';
 import { isSameMonth, subMonths, parseISO, format, startOfMonth, endOfMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -27,7 +23,7 @@ import { supabase } from '../lib/supabaseClient';
 export default function Dashboard() {
   const dashboardRef = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<any>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
+  // const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
@@ -330,7 +326,7 @@ export default function Dashboard() {
           <section style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '2rem' }}>
             <button className="btn btn-ghost" onClick={handleDownloadReport}><ArrowDownRight size={18} /> 리포트 캡처</button>
             <button className="btn btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => setShowDeleteModal(true)} disabled={transactions.length === 0}><Trash2 size={18} /> 전체 삭제</button>
-            <button className="btn btn-primary" onClick={() => setShowAddModal(true)}><Plus size={18} /> 임시 내역 추가</button>
+            <button className="btn btn-primary" onClick={() => alert('기능 준비 중입니다.')}><Plus size={18} /> 임시 내역 추가</button>
           </section>
         </div>
 
