@@ -56,7 +56,7 @@ export default function AnalyticsCharts({ transactions, onCategoryClick, selecte
   const categoryData = useMemo(() => {
     const expenses = transactions.filter(t => t.type === 'expense');
     const grouped = expenses.reduce((acc, tx) => {
-      acc[tx.category] = (acc[tx.category] || 0) + tx.amount;
+      acc[tx.category] = (acc[tx.category] || 0) + Math.abs(tx.amount);
       return acc;
     }, {} as Record<string, number>);
 
