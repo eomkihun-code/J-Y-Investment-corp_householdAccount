@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [fixedCosts, setFixedCosts] = useState<any[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [externalDateRange, setExternalDateRange] = useState<ExternalDateRange | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
@@ -50,11 +51,16 @@ export default function Dashboard() {
     try {
       setIsLoading(true);
       // Supabase 1000개 제한 우회를 위해 여러 페이지 요청 (총 3000개 예상)
-      const [p1, p2, p3] = await Promise.all([
+      const [p1, p2, p3, fc] = await Promise.all([
         supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).range(0, 999),
         supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).range(1000, 1999),
-        supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).range(2000, 2999)
+        supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).range(2000, 2999),
+        supabase.from('fixed_costs').select('*').eq('user_id', userId)
       ]);
+
+      if (fc.data) {
+        setFixedCosts(fc.data);
+      }
 
       const data = [...(p1.data || []), ...(p2.data || []), ...(p3.data || [])];
       
@@ -134,7 +140,15 @@ export default function Dashboard() {
         currentIncome += amt;
       }
     });
+
+    // 고정비(Fixed Costs) 합계 추가 (매월 반복되는 지출로 간주)
+    // 현재 선택된 기간의 개월 수를 계산하여 고정비를 곱해줌
+    const monthsSet = new Set(filteredTransactions.map(t => format(parseISO(t.date), 'yyyy-MM')));
+    const monthCount = Math.max(1, monthsSet.size);
+    const monthlyFixedTotal = fixedCosts.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const totalFixedCost = monthlyFixedTotal * monthCount;
     
+    currentExpense += totalFixedCost;
     const currentNet = currentIncome - currentExpense;
 
     console.log('Dashboard Stats Summary:', {
@@ -147,7 +161,6 @@ export default function Dashboard() {
     });
 
     // 조회 기간 표시
-    const monthsSet = new Set(filteredTransactions.map(t => format(parseISO(t.date), 'yyyy-MM')));
     const latestMonthStr = monthsSet.size === 1 
       ? format(parseISO(filteredTransactions[0].date), 'M월', { locale: ko })
       : '조회 기간';
