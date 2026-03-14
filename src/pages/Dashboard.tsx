@@ -148,24 +148,26 @@ export default function Dashboard() {
       sample: filteredTransactions.slice(0, 2)
     });
 
-    // "M월" 표시를 위한 로직: 선택된 데이터의 월이 동일한지 확인
-    const months = new Set(filteredTransactions.map(t => format(parseISO(t.date), 'yyyy-MM')));
-    const latestMonthStr = months.size === 1 
+    // 조회 기간 표시
+    const monthsSet = new Set(filteredTransactions.map(t => format(parseISO(t.date), 'yyyy-MM')));
+    const latestMonthStr = monthsSet.size === 1 
       ? format(parseISO(filteredTransactions[0].date), 'M월', { locale: ko })
       : '조회 기간';
 
-    // 전월 대비 비교는 한 달만 선택했을 때만 의미가 있으므로, 복수 달인 경우 0으로 처리하거나 단순화
-    // 일단 사용자가 요청한 '총합이 틀리다'는 전체 기간 합계를 의미하므로 합계에 집중
-    return {
+    const result = {
       latestMonthStr,
       currentExpense, 
-      lastExpense: 0, // 복수 달인 경우 비교 대상이 모호하므로 0 처리
+      lastExpense: 0, 
       expenseDiffRate: 0,
       currentIncome, 
       lastIncome: 0, 
       incomeDiffRate: 0,
       currentNet
     };
+    
+    // Debugging
+    (window as any).lastStats = result;
+    return result;
   }, [filteredTransactions]);
 
   const handleLogout = async () => {
@@ -293,7 +295,7 @@ export default function Dashboard() {
           />
 
           <div ref={dashboardRef}>
-            <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <section className="notranslate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
               <div className="glass" style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
                   <div style={{ padding: '10px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', color: 'var(--primary)' }}>

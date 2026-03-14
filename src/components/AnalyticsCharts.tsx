@@ -179,6 +179,7 @@ export default function AnalyticsCharts({ transactions, onCategoryClick, selecte
                       onCategoryClick(e.value);
                     }
                   }}
+                  formatter={(value) => <span className="notranslate">{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
