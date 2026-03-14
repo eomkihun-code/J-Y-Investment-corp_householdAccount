@@ -338,6 +338,7 @@ export default function Dashboard() {
             <section style={{ marginBottom: '2rem' }}>
               <AnalyticsCharts 
                 transactions={filteredTransactions} 
+                fixedCosts={fixedCosts}
                 onCategoryClick={setSelectedCategory} 
                 selectedCategory={selectedCategory}
                 onBarClick={handleBarClick}
