@@ -62,9 +62,7 @@ export default function AnalyticsCharts({ transactions, onCategoryClick, selecte
       return acc;
     }, {} as Record<string, any>));
 
-    console.log('Months keys:', months);
     const result = months.map(m => grouped[m]);
-    console.log('Monthly Data result (mapped):', result);
     return result;
   }, [transactions, selectedCategory]);
 

@@ -59,7 +59,6 @@ export default function Dashboard() {
       const data = [...(p1.data || []), ...(p2.data || []), ...(p3.data || [])];
       
       if (data.length > 0) {
-        console.log('Raw DB Data Check (First Item):', data[0]);
         // DB format to internal Transaction format if needed
         const mapped = data.map(d => {
           const rawAmount = typeof d.amount === 'number' ? d.amount : Number(String(d.amount).replace(/[^0-9.-]/g, ''));
@@ -77,7 +76,6 @@ export default function Dashboard() {
           };
         }) as Transaction[];
         
-        console.log('Mapped Transactions Check (First 5):', mapped.slice(0, 5).map(m => ({ id: m.id, type: m.type, amount: m.amount })));
         setTransactions(mapped);
         
         const files = Array.from(new Set(data.map(d => d.file_name).filter(Boolean)));
@@ -165,8 +163,6 @@ export default function Dashboard() {
       currentNet
     };
     
-    // Debugging
-    (window as any).lastStats = result;
     return result;
   }, [filteredTransactions]);
 
@@ -265,7 +261,6 @@ export default function Dashboard() {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
-      <div id="debug-info" style={{ display: 'none' }} data-stats={JSON.stringify(stats)}></div>
       
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div>
