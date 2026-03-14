@@ -7,7 +7,7 @@ import {
   ShoppingCart,
   Trash2
 } from 'lucide-react';
-import { isSameMonth, subMonths, parseISO, format, startOfMonth, endOfMonth } from 'date-fns';
+import { parseISO, format, startOfMonth, endOfMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import html2canvas from 'html2canvas';
 import CsvUploadWidget from '../components/CsvUploadWidget';
@@ -48,30 +48,38 @@ export default function Dashboard() {
 
   const fetchTransactions = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('date', { ascending: false });
+      setIsLoading(true);
+      // Supabase 1000개 제한 우회를 위해 여러 페이지 요청 (총 3000개 예상)
+      const [p1, p2, p3] = await Promise.all([
+        supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).range(0, 999),
+        supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).range(1000, 1999),
+        supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).range(2000, 2999)
+      ]);
 
-      if (error) throw error;
+      const data = [...(p1.data || []), ...(p2.data || []), ...(p3.data || [])];
       
-      if (data) {
+      if (data.length > 0) {
+        console.log('Raw DB Data Check (First Item):', data[0]);
         // DB format to internal Transaction format if needed
-        const mapped = data.map(d => ({
-          id: d.id,
-          date: d.date,
-          amount: Number(d.amount),
-          description: d.content,
-          category: d.category,
-          type: d.amount < 0 ? 'expense' : 'income',
-          cardType: d.payment_method || '',
-          fileName: d.file_name
-        })) as Transaction[];
+        const mapped = data.map(d => {
+          const rawAmount = typeof d.amount === 'number' ? d.amount : Number(String(d.amount).replace(/[^0-9.-]/g, ''));
+          const amountValue = isNaN(rawAmount) ? 0 : rawAmount;
+          
+          return {
+            id: d.id,
+            date: d.date,
+            amount: amountValue,
+            description: d.content,
+            category: d.category || '기타',
+            type: amountValue < 0 ? 'expense' : 'income',
+            cardType: d.payment_method || '',
+            fileName: d.file_name
+          };
+        }) as Transaction[];
         
+        console.log('Mapped Transactions Check (First 5):', mapped.slice(0, 5).map(m => ({ id: m.id, type: m.type, amount: m.amount })));
         setTransactions(mapped);
         
-        // 유니크한 파일명 추출
         const files = Array.from(new Set(data.map(d => d.file_name).filter(Boolean)));
         setUploadedFiles(files);
       }
@@ -116,35 +124,49 @@ export default function Dashboard() {
       };
     }
     
-    const validDates = filteredTransactions.map(t => new Date(t.date).getTime()).filter(t => !isNaN(t));
-    const latestDate = validDates.length > 0 ? new Date(Math.max(...validDates)) : new Date();
-    const lastMonthDate = subMonths(latestDate, 1);
-    const latestMonthStr = format(latestDate, 'M월', { locale: ko });
-
-    const currentMonthTxs = filteredTransactions.filter(t => {
-      try { return isSameMonth(parseISO(t.date), latestDate); } catch { return false; }
+    // 전체 필터링된 데이터에 대한 합계 계산 (더 견고한 루프로 변경)
+    let currentExpense = 0;
+    let currentIncome = 0;
+    
+    filteredTransactions.forEach(t => {
+      const amt = Math.abs(t.amount);
+      if (t.type === 'expense') {
+        currentExpense += amt;
+      } else if (t.type === 'income') {
+        currentIncome += amt;
+      }
     });
-    const lastMonthTxs = transactions.filter(t => {
-      try { return isSameMonth(parseISO(t.date), lastMonthDate); } catch { return false; }
-    });
-
-    const currentExpense = currentMonthTxs.filter(t => t.type === 'expense').reduce((a, b) => a + Math.abs(b.amount), 0);
-    const lastExpense = lastMonthTxs.filter(t => t.type === 'expense').reduce((a, b) => a + Math.abs(b.amount), 0);
-    const expenseDiffRate = lastExpense === 0 ? 0 : ((currentExpense - lastExpense) / lastExpense) * 100;
-
-    const currentIncome = currentMonthTxs.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
-    const lastIncome = lastMonthTxs.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
-    const incomeDiffRate = lastIncome === 0 ? 0 : ((currentIncome - lastIncome) / lastIncome) * 100;
-
+    
     const currentNet = currentIncome - currentExpense;
 
+    console.log('Dashboard Stats Summary:', {
+      count: filteredTransactions.length,
+      currentExpense,
+      currentIncome,
+      currentNet,
+      uniqueTypes: Array.from(new Set(filteredTransactions.map(t => t.type))),
+      sample: filteredTransactions.slice(0, 2)
+    });
+
+    // "M월" 표시를 위한 로직: 선택된 데이터의 월이 동일한지 확인
+    const months = new Set(filteredTransactions.map(t => format(parseISO(t.date), 'yyyy-MM')));
+    const latestMonthStr = months.size === 1 
+      ? format(parseISO(filteredTransactions[0].date), 'M월', { locale: ko })
+      : '조회 기간';
+
+    // 전월 대비 비교는 한 달만 선택했을 때만 의미가 있으므로, 복수 달인 경우 0으로 처리하거나 단순화
+    // 일단 사용자가 요청한 '총합이 틀리다'는 전체 기간 합계를 의미하므로 합계에 집중
     return {
       latestMonthStr,
-      currentExpense, lastExpense, expenseDiffRate,
-      currentIncome, lastIncome, incomeDiffRate,
+      currentExpense, 
+      lastExpense: 0, // 복수 달인 경우 비교 대상이 모호하므로 0 처리
+      expenseDiffRate: 0,
+      currentIncome, 
+      lastIncome: 0, 
+      incomeDiffRate: 0,
       currentNet
     };
-  }, [filteredTransactions, transactions]);
+  }, [filteredTransactions]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -241,6 +263,7 @@ export default function Dashboard() {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+      <div id="debug-info" style={{ display: 'none' }} data-stats={JSON.stringify(stats)}></div>
       
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div>

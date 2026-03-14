@@ -13,7 +13,7 @@ import {
   Legend
 } from 'recharts';
 import type { Transaction } from '../types/transaction';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
 interface AnalyticsChartsProps {
@@ -34,22 +34,38 @@ export default function AnalyticsCharts({ transactions, onCategoryClick, selecte
       ? transactions.filter(t => t.category === selectedCategory)
       : transactions;
 
+    // 1. 최근 12개월 목록 생성 (데이터가 없더라도 12개가 나오도록)
+    const months = [];
+    const today = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = subMonths(today, i);
+      const mLabel = format(d, 'yyyy년 MM월', { locale: ko });
+      months.push(mLabel);
+    }
+    
+    if (chartTransactions.length > 0) {
+      console.log('Chart Debug - First TX Date:', chartTransactions[0].date);
+      console.log('Chart Debug - First TX Parsed Month:', format(parseISO(chartTransactions[0].date), 'yyyy년 MM월', { locale: ko }));
+    }
+
     const grouped = chartTransactions.reduce((acc, tx) => {
       try {
         const month = format(parseISO(tx.date), 'yyyy년 MM월', { locale: ko });
-        if (!acc[month]) {
-          acc[month] = { name: month, 수입: 0, 지출: 0 };
+        if (acc[month]) {
+          if (tx.type === 'income') acc[month].수입 += Math.abs(tx.amount);
+          if (tx.type === 'expense') acc[month].지출 += Math.abs(tx.amount);
         }
-        if (tx.type === 'income') acc[month].수입 += Math.abs(tx.amount);
-        if (tx.type === 'expense') acc[month].지출 += Math.abs(tx.amount);
-      } catch (e) {
-        // 날짜 파싱 오류 무시
-      }
+      } catch (e) { /* ignore */ }
       return acc;
-    }, {} as Record<string, any>);
+    }, months.reduce((acc, m) => {
+      acc[m] = { name: m, 수입: 0, 지출: 0 };
+      return acc;
+    }, {} as Record<string, any>));
 
-    // 날짜 순 정렬
-    return Object.values(grouped).sort((a, b) => a.name.localeCompare(b.name));
+    console.log('Months keys:', months);
+    const result = months.map(m => grouped[m]);
+    console.log('Monthly Data result (mapped):', result);
+    return result;
   }, [transactions, selectedCategory]);
 
   // 2. 카테고리별 지출 형태 요약 데이터 가공 (도넛 차트용)
@@ -88,7 +104,17 @@ export default function AnalyticsCharts({ transactions, onCategoryClick, selecte
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+              <XAxis 
+                dataKey="name" 
+                stroke="var(--text-muted)" 
+                fontSize={9} 
+                tickLine={false} 
+                axisLine={false} 
+                interval={0}
+                angle={-15}
+                textAnchor="end"
+                height={60}
+              />
               <YAxis 
                 stroke="var(--text-muted)" 
                 fontSize={12} 
@@ -101,9 +127,12 @@ export default function AnalyticsCharts({ transactions, onCategoryClick, selecte
                 contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--text-main)' }}
                 formatter={(value: any) => `₩ ${Number(value).toLocaleString()}`}
               />
-              <Legend wrapperStyle={{ paddingTop: '20px' }} />
-              <Bar dataKey="수입" fill="var(--success)" radius={[4, 4, 0, 0]} maxBarSize={40} style={{ cursor: onBarClick ? 'pointer' : 'default' }} onClick={(data: any) => { if (onBarClick && data?.name) onBarClick(data.name); }} />
-              <Bar dataKey="지출" fill="var(--danger)" radius={[4, 4, 0, 0]} maxBarSize={40} style={{ cursor: onBarClick ? 'pointer' : 'default' }} onClick={(data: any) => { if (onBarClick && data?.name) onBarClick(data.name); }} />
+              <Legend 
+                wrapperStyle={{ paddingTop: '20px' }} 
+                formatter={(value) => <span className="notranslate">{value}</span>}
+              />
+              <Bar name="수입" dataKey="수입" fill="var(--success)" radius={[4, 4, 0, 0]} maxBarSize={40} style={{ cursor: onBarClick ? 'pointer' : 'default' }} onClick={(data: any) => { if (onBarClick && data?.name) onBarClick(data.name); }} />
+              <Bar name="지출" dataKey="지출" fill="var(--danger)" radius={[4, 4, 0, 0]} maxBarSize={40} style={{ cursor: onBarClick ? 'pointer' : 'default' }} onClick={(data: any) => { if (onBarClick && data?.name) onBarClick(data.name); }} />
             </BarChart>
           </ResponsiveContainer>
         </div>
