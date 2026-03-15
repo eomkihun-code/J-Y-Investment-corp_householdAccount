@@ -439,6 +439,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      <div style={{ marginTop: '4rem', paddingBottom: '2rem', textAlign: 'center', opacity: 0.3, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+        v1.2.3-stable (Final Mobile Fix)
+      </div>
     </div>
   );
 }

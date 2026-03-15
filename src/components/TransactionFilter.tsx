@@ -101,51 +101,48 @@ export default function TransactionFilter({ transactions, onFilterChange, extern
 
   return (
     <div className="glass notranslate" translate="no" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', flexDirection: 'column' }}>
-        
-        {/* Search Bar */}
-        <div style={{ width: '100%', position: 'relative' }}>
-          <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
-            <Search size={18} />
-          </div>
-          <input 
-            type="text" 
-            className="input-field" 
-            placeholder="스타벅스, 쿠팡 등 키워드 검색..." 
-            style={{ paddingLeft: '40px', width: '100%' }}
-            value={filter.keyword}
-            onChange={(e) => setFilter(prev => ({ ...prev, keyword: e.target.value }))}
-          />
+      {/* Row 1: Search Bar */}
+      <div style={{ position: 'relative', width: '100%', marginBottom: '1rem' }}>
+        <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
+          <Search size={18} />
         </div>
+        <input 
+          type="text" 
+          className="input-field" 
+          placeholder="스타벅스, 쿠팡 등 키워드 검색..." 
+          style={{ paddingLeft: '40px', width: '100%' }}
+          value={filter.keyword}
+          onChange={(e) => setFilter(prev => ({ ...prev, keyword: e.target.value }))}
+        />
+      </div>
 
-        {/* Filter Toggle for Mobile / Details */}
-        <div style={{ display: 'flex', gap: '8px', width: '100%', minWidth: 0 }}>
-          <div className="filter-presets" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '4px', flex: 1, overflowX: 'auto' }}>
-            <button 
-              className={`btn ${filter.datePreset === 'thisMonth' ? 'btn-primary' : 'btn-ghost'}`} 
-              style={{ padding: '6px 8px', fontSize: '0.8rem', flex: '1 0 auto', whiteSpace: 'nowrap' }}
-              onClick={() => handleDatePresetChange('thisMonth')}
-            >이번 달</button>
-            <button 
-              className={`btn ${filter.datePreset === 'thisYear' ? 'btn-primary' : 'btn-ghost'}`} 
-              style={{ padding: '6px 8px', fontSize: '0.8rem', flex: '1 0 auto', whiteSpace: 'nowrap' }}
-              onClick={() => handleDatePresetChange('thisYear')}
-            >올해</button>
-            <button 
-              className={`btn ${filter.datePreset === 'all' ? 'btn-primary' : 'btn-ghost'}`} 
-              style={{ padding: '6px 8px', fontSize: '0.8rem', flex: '1 0 auto', whiteSpace: 'nowrap' }}
-              onClick={() => handleDatePresetChange('all')}
-            >전체</button>
-          </div>
-          
+      {/* Row 2: Presets & Filter Icon */}
+      <div style={{ display: 'flex', gap: '8px', width: '100%', alignItems: 'center' }}>
+        <div className="filter-presets" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '4px', flex: 1, overflowX: 'auto' }}>
           <button 
-            className={`btn ${isFilterOpen ? 'btn-primary' : 'btn-ghost'}`} 
-            style={{ padding: '8px 12px', border: '1px solid var(--glass-border)', flexShrink: 0 }}
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-          >
-            <Filter size={18} />
-          </button>
+            className={`btn ${filter.datePreset === 'thisMonth' ? 'btn-primary' : 'btn-ghost'}`} 
+            style={{ padding: '6px 8px', fontSize: '0.8rem', flex: '1 0 auto', whiteSpace: 'nowrap' }}
+            onClick={() => handleDatePresetChange('thisMonth')}
+          >이번 달</button>
+          <button 
+            className={`btn ${filter.datePreset === 'thisYear' ? 'btn-primary' : 'btn-ghost'}`} 
+            style={{ padding: '6px 8px', fontSize: '0.8rem', flex: '1 0 auto', whiteSpace: 'nowrap' }}
+            onClick={() => handleDatePresetChange('thisYear')}
+          >올해</button>
+          <button 
+            className={`btn ${filter.datePreset === 'all' ? 'btn-primary' : 'btn-ghost'}`} 
+            style={{ padding: '6px 8px', fontSize: '0.8rem', flex: '1 0 auto', whiteSpace: 'nowrap' }}
+            onClick={() => handleDatePresetChange('all')}
+          >전체</button>
         </div>
+        
+        <button 
+          className={`btn ${isFilterOpen ? 'btn-primary' : 'btn-ghost'}`} 
+          style={{ padding: '8px 12px', border: '1px solid var(--glass-border)', flexShrink: 0 }}
+          onClick={() => setIsFilterOpen(!isFilterOpen)}
+        >
+          <Filter size={18} />
+        </button>
       </div>
 
       {/* Expanded Custom Filter Panel */}
