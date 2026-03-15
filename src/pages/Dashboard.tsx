@@ -303,7 +303,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+    <div className="notranslate" translate="no" style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
       
       <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div>

@@ -100,7 +100,7 @@ export default function TransactionFilter({ transactions, onFilterChange, extern
   };
 
   return (
-    <div className="glass" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+    <div className="glass notranslate" translate="no" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
         
         {/* Search Bar */}
