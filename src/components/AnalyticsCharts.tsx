@@ -28,12 +28,9 @@ type ChartDuration = 'all' | '1' | '3' | '6' | '12';
 
 const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#64748b'];
 
-export default function AnalyticsCharts({ 
-  transactions, 
-  selectedCategory, 
-  onCategoryClick,
   onBarClick 
 }: AnalyticsChartsProps) {
+  const version = "v1.2.1-stable"; // Version stamp for verification
   const [duration, setDuration] = useState<ChartDuration>('12');
   const [isMounted, setIsMounted] = useState(false);
 
