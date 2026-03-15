@@ -11,16 +11,20 @@ interface ExcelUploadWidgetProps {
 
 // 헤더 이름으로 열 인덱스 자동 감지
 function detectColumns(header: string[]): { card: number; date: number; desc: number; amount: number; category: number } {
-  const h = header.map(s => (s || '').toString().trim().replace(/\s+/g, ''));
+  // 띄어쓰기 및 특수문자 제거 후 비교
+  const clean = (s: string) => (s || '').toString().toLowerCase().trim().replace(/[\s\(\)\[\]]/g, '');
+  const h = header.map(clean);
   
   const find = (keywords: string[]): number => {
-    return h.findIndex(col => keywords.some(kw => col.includes(kw)));
+    const cleanKeywords = keywords.map(kw => kw.toLowerCase().replace(/[\s\(\)\[\]]/g, ''));
+    return h.findIndex(col => cleanKeywords.some(kw => col.includes(kw)));
   };
 
   const card = find(['카드사', '카드종류', '카드']);
   const date = find(['승인일자', '날짜', '일자', '결제일']);
   const desc = find(['가맹점명', '가맹점', '항목', '내용', '상호명', '사용처']);
-  const amount = find(['승인금액', '사용금액', '금액', '결제금액']);
+  // '승인금액(원)'과 '금액 (원)' 모두 catch하기 위해 '금액' 키워드 사용
+  const amount = find(['승인금액', '사용금액', '결제금액', '금액']);
   const category = find(['대분류', '분류', '카테고리']);
 
   return { card, date, desc, amount, category };
@@ -84,9 +88,9 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
 
           if (!description) continue;
 
-          // 금액 파싱
-          const amount = parseFloat(rawAmount) || 0;
-          if (amount === 0) continue;
+          // 금액 파싱 (마이너스 부호 보존)
+          const amount = parseFloat(rawAmount);
+          if (isNaN(amount)) continue; // 숫자가 아닌 경우만 스킵
 
           // 날짜 파싱 (raw: false이므로 문자열로 제공됨)
           let dateStr = new Date().toISOString();
@@ -101,9 +105,10 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
 
           // 타입 설정
           let type: TransactionType = 'expense';
-          const finalAmount = Math.abs(amount);
           
-          if (amount < 0 || description.includes('입금') || description.includes('환불') || category === '수입') {
+          // 수입으로 판단하는 조건: 가맹점명에 특정 키워드가 있거나 카테고리가 수입인 경우
+          // 마이너스 금액은 '지출의 취소'로 보아 동일한 type(expense)을 유지하며 합산 시 차감되도록 함
+          if (description.includes('입금') || category === '수입') {
             type = 'income';
           }
 
@@ -111,7 +116,7 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
             id: crypto.randomUUID(),
             date: dateStr,
             description,
-            amount: finalAmount,
+            amount: amount, // 부호 그대로 저장 (취소 시 -값)
             type,
             category: category || '기타',
             cardType: cardType

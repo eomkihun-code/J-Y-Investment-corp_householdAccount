@@ -18,7 +18,6 @@ import { ko } from 'date-fns/locale';
 
 interface AnalyticsChartsProps {
   transactions: Transaction[];
-  fixedCosts?: any[];
   onCategoryClick?: (category: string) => void;
   selectedCategory?: string | null;
   onBarClick?: (monthStr: string) => void;
@@ -28,7 +27,6 @@ const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#f59e0b', '#10b981'
 
 export default function AnalyticsCharts({ 
   transactions, 
-  fixedCosts = [],
   onCategoryClick, 
   selectedCategory, 
   onBarClick 
@@ -50,20 +48,17 @@ export default function AnalyticsCharts({
       months.push(mLabel);
     }
     
-    // 고정비 총합 계산
-    const monthlyFixedTotal = fixedCosts.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-
     const grouped = chartTransactions.reduce((acc, tx) => {
       try {
         const month = format(parseISO(tx.date), 'yyyy년 MM월', { locale: ko });
         if (acc[month]) {
-          if (tx.type === 'income') acc[month].수입 += Math.abs(tx.amount);
-          if (tx.type === 'expense') acc[month].지출 += Math.abs(tx.amount);
+          if (tx.type === 'income') acc[month].수입 += tx.amount;
+          if (tx.type === 'expense') acc[month].지출 += tx.amount;
         }
       } catch (e) { /* ignore */ }
       return acc;
     }, months.reduce((acc, m) => {
-      acc[m] = { name: m, 수입: 0, 지출: monthlyFixedTotal };
+      acc[m] = { name: m, 수입: 0, 지출: 0 };
       return acc;
     }, {} as Record<string, any>));
 
@@ -75,7 +70,7 @@ export default function AnalyticsCharts({
   const categoryData = useMemo(() => {
     const expenses = transactions.filter(t => t.type === 'expense');
     const grouped = expenses.reduce((acc, tx) => {
-      acc[tx.category] = (acc[tx.category] || 0) + Math.abs(tx.amount);
+      acc[tx.category] = (acc[tx.category] || 0) + tx.amount;
       return acc;
     }, {} as Record<string, number>);
 

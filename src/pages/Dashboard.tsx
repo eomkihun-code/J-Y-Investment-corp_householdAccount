@@ -29,7 +29,6 @@ export default function Dashboard() {
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [fixedCosts, setFixedCosts] = useState<any[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [externalDateRange, setExternalDateRange] = useState<ExternalDateRange | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
@@ -51,24 +50,18 @@ export default function Dashboard() {
     try {
       setIsLoading(true);
       // Supabase 1000개 제한 우회를 위해 여러 페이지 요청 (총 3000개 예상)
-      const [p1, p2, p3, fc] = await Promise.all([
+      const [p1, p2, p3] = await Promise.all([
         supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).range(0, 999),
         supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).range(1000, 1999),
-        supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).range(2000, 2999),
-        supabase.from('fixed_costs').select('*').eq('user_id', userId)
+        supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }).range(2000, 2999)
       ]);
-
-      if (fc.data) {
-        setFixedCosts(fc.data);
-      }
 
       const data = [...(p1.data || []), ...(p2.data || []), ...(p3.data || [])];
       
       if (data.length > 0) {
         // DB format to internal Transaction format if needed
         const mapped = data.map(d => {
-          const rawAmount = typeof d.amount === 'number' ? d.amount : Number(String(d.amount).replace(/[^0-9.-]/g, ''));
-          const amountValue = isNaN(rawAmount) ? 0 : rawAmount;
+          const amountValue = typeof d.amount === 'number' ? d.amount : Number(String(d.amount).replace(/[^0-9.-]/g, ''));
           
           return {
             id: d.id,
@@ -76,13 +69,16 @@ export default function Dashboard() {
             amount: amountValue,
             description: d.content,
             category: d.category || '기타',
-            type: amountValue < 0 ? 'expense' : 'income',
+            type: d.type || (amountValue >= 0 && (d.content.includes('입금') || d.category === '수입') ? 'income' : 'expense'),
             cardType: d.payment_method || '',
             fileName: d.file_name
           };
         }) as Transaction[];
         
-        setTransactions(mapped);
+        // Sheet1(결제내역) 파일 업로드를 통해 생성된 내역만 필터링 
+        // (file_name이 없는 유령 고정비 데이터 등을 통계에서 제외)
+        const sheetTransactions = mapped.filter(t => t.fileName && t.fileName.trim() !== '');
+        setTransactions(sheetTransactions);
         
         const files = Array.from(new Set(data.map(d => d.file_name).filter(Boolean)));
         setUploadedFiles(files);
@@ -131,27 +127,21 @@ export default function Dashboard() {
     // 전체 필터링된 데이터에 대한 합계 계산 (더 견고한 루프로 변경)
     let currentExpense = 0;
     let currentIncome = 0;
+    const monthsSet = new Set<string>();
     
     filteredTransactions.forEach(t => {
-      const amt = Math.abs(t.amount);
+      monthsSet.add(format(parseISO(t.date), 'yyyy-MM'));
       if (t.type === 'expense') {
-        currentExpense += amt;
+        currentExpense += t.amount; // 취소 내역(-값)이 합산되면서 자연스럽게 차감됨
       } else if (t.type === 'income') {
-        currentIncome += amt;
+        currentIncome += t.amount;
       }
     });
-
-    // 고정비(Fixed Costs) 합계 추가 (매월 반복되는 지출로 간주)
-    // 현재 선택된 기간의 개월 수를 계산하여 고정비를 곱해줌
-    const monthsSet = new Set(filteredTransactions.map(t => format(parseISO(t.date), 'yyyy-MM')));
-    const monthCount = Math.max(1, monthsSet.size);
-    const monthlyFixedTotal = fixedCosts.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-    const totalFixedCost = monthlyFixedTotal * monthCount;
     
-    currentExpense += totalFixedCost;
+    // 고정비(Fixed Costs)는 메인 합계에서 제외 (사용자 요청)
     const currentNet = currentIncome - currentExpense;
 
-    console.log('Dashboard Stats Summary:', {
+    console.log('Dashboard Stats Summary (Excluding Fixed Costs):', {
       count: filteredTransactions.length,
       currentExpense,
       currentIncome,
@@ -195,7 +185,7 @@ export default function Dashboard() {
         date: t.date,
         category: t.category,
         content: t.description,
-        amount: t.type === 'expense' ? -Math.abs(t.amount) : Math.abs(t.amount),
+        amount: t.amount, // 부호 그대로 전달
         payment_method: t.cardType,
         file_name: fileName
       }));
@@ -338,7 +328,6 @@ export default function Dashboard() {
             <section style={{ marginBottom: '2rem' }}>
               <AnalyticsCharts 
                 transactions={filteredTransactions} 
-                fixedCosts={fixedCosts}
                 onCategoryClick={setSelectedCategory} 
                 selectedCategory={selectedCategory}
                 onBarClick={handleBarClick}
