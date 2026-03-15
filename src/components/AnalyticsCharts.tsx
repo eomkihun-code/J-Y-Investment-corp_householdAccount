@@ -94,7 +94,7 @@ export default function AnalyticsCharts({
       <div className="glass" style={{ padding: '1.5rem' }}>
         <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: '600' }}>
-            월별 수입/지출 추이 {selectedCategory && <span style={{ color: 'var(--primary)', fontSize: '0.9rem', marginLeft: '8px' }}>({selectedCategory}만 표시 중)</span>}
+            월별 수입/지출 추이 (v1.1) {selectedCategory && <span style={{ color: 'var(--primary)', fontSize: '0.9rem', marginLeft: '8px' }}>({selectedCategory}만 표시 중)</span>}
           </h3>
           <div className="filter-presets" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '4px', gap: '2px' }}>
             {[
