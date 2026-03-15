@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -169,7 +169,7 @@ export default function AnalyticsCharts({
                 paddingAngle={5}
                 dataKey="value"
               >
-                {expenseByCategory.map((entry, index) => (
+                {expenseByCategory.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
