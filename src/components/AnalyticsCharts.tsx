@@ -1,191 +1,196 @@
-import { useMemo } from 'react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import React, { useMemo, useState } from 'react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
+  Cell,
   PieChart,
   Pie,
-  Cell,
   Legend
 } from 'recharts';
 import type { Transaction } from '../types/transaction';
-import { format, parseISO, subMonths } from 'date-fns';
+import { format, parseISO, subMonths, differenceInMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
 interface AnalyticsChartsProps {
   transactions: Transaction[];
-  onCategoryClick?: (category: string) => void;
-  selectedCategory?: string | null;
+  onCategoryClick: (category: string) => void;
+  selectedCategory: string | null;
   onBarClick?: (monthStr: string) => void;
 }
+
+type ChartDuration = 'all' | '1' | '3' | '6' | '12';
 
 const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#64748b'];
 
 export default function AnalyticsCharts({ 
   transactions, 
-  onCategoryClick, 
   selectedCategory, 
   onBarClick 
 }: AnalyticsChartsProps) {
+  const [duration, setDuration] = useState<ChartDuration>('12');
   
   // 1. 월별 수입/지출 추이 데이터 가공
   const monthlyData = useMemo(() => {
-    // If a category is selected, filter transactions first
-    const chartTransactions = selectedCategory 
+    const filteredByCat = selectedCategory 
       ? transactions.filter(t => t.category === selectedCategory)
       : transactions;
 
-    // 1. 최근 12개월 목록 생성 (데이터가 없더라도 12개가 나오도록)
+    // 1. 선택된 기간에 따른 개월 수 및 목록 생성
     const months = [];
     const today = new Date();
-    for (let i = 11; i >= 0; i--) {
+    
+    let monthCount = 12;
+    if (duration === 'all') {
+      const allDates = transactions.map(t => parseISO(t.date).getTime()).filter(t => !isNaN(t));
+      if (allDates.length > 0) {
+        const minDate = new Date(Math.min(...allDates));
+        monthCount = Math.max(1, differenceInMonths(today, minDate) + 1);
+        if (monthCount > 36) monthCount = 36; // 최대 3년으로 제한
+      }
+    } else {
+      monthCount = parseInt(duration);
+    }
+
+    for (let i = monthCount - 1; i >= 0; i--) {
       const d = subMonths(today, i);
       const mLabel = format(d, 'yy.MM', { locale: ko });
       months.push(mLabel);
     }
-    
-    const grouped = chartTransactions.reduce((acc, tx) => {
-      try {
-        const month = format(parseISO(tx.date), 'yy.MM', { locale: ko });
-        if (acc[month]) {
-          if (tx.type === 'income') acc[month].수입 += tx.amount;
-          if (tx.type === 'expense') acc[month].지출 += tx.amount;
-        }
-      } catch (e) { /* ignore */ }
-      return acc;
-    }, months.reduce((acc, m) => {
-      acc[m] = { name: m, 수입: 0, 지출: 0 };
-      return acc;
-    }, {} as Record<string, any>));
 
-    const result = months.map(m => grouped[m]);
-    return result;
-  }, [transactions, selectedCategory]);
+    return months.map(m => {
+      const monthTxs = filteredByCat.filter(t => format(parseISO(t.date), 'yy.MM') === m);
+      const income = monthTxs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+      const expense = monthTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+      return {
+        month: m,
+        income,
+        expense: Math.abs(expense)
+      };
+    });
+  }, [transactions, selectedCategory, duration]);
 
-  // 2. 카테고리별 지출 형태 요약 데이터 가공 (도넛 차트용)
-  const categoryData = useMemo(() => {
+  // 2. 카테고리별 지출 비율 데이터 가공
+  const expenseByCategory = useMemo(() => {
     const expenses = transactions.filter(t => t.type === 'expense');
-    const grouped = expenses.reduce((acc, tx) => {
-      acc[tx.category] = (acc[tx.category] || 0) + tx.amount;
-      return acc;
-    }, {} as Record<string, number>);
+    const categories: Record<string, number> = {};
+    expenses.forEach(t => {
+      categories[t.category] = (categories[t.category] || 0) + Math.abs(t.amount);
+    });
 
-    return Object.entries(grouped)
+    return Object.entries(categories)
       .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value); // 높은 금액 순
+      .sort((a, b) => b.value - a.value);
   }, [transactions]);
-
-  if (transactions.length === 0) {
-    return (
-      <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-        엑셀 파일을 업로드하여 차트 분석을 확인해보세요.
-      </div>
-    );
-  }
 
   return (
     <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
       
       {/* Monthly Bar Chart */}
       <div className="glass" style={{ padding: '1.5rem' }}>
-        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', fontWeight: '600' }}>
-          월별 수입/지출 추이 {selectedCategory && <span style={{ color: 'var(--primary)', fontSize: '0.9rem', marginLeft: '8px' }}>({selectedCategory}만 표시 중)</span>}
-        </h3>
+        <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '600' }}>
+            월별 수입/지출 추이 {selectedCategory && <span style={{ color: 'var(--primary)', fontSize: '0.9rem', marginLeft: '8px' }}>({selectedCategory}만 표시 중)</span>}
+          </h3>
+          <div className="filter-presets" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '4px', gap: '2px' }}>
+            {[
+              { label: '전체', value: 'all' },
+              { label: '당월', value: '1' },
+              { label: '3개월', value: '3' },
+              { label: '6개월', value: '6' },
+              { label: '1년', value: '12' },
+            ].map(preset => (
+              <button
+                key={preset.value}
+                className={`btn ${duration === preset.value ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '6px' }}
+                onClick={() => setDuration(preset.value as ChartDuration)}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div style={{ width: '100%', height: '300px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={monthlyData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+              onClick={(data) => {
+                if (data && data.activeLabel && onBarClick) {
+                  onBarClick(data.activeLabel);
+                }
+              }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
               <XAxis 
-                dataKey="name" 
-                stroke="var(--text-muted)" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false} 
-                interval={0}
-                textAnchor="middle"
-                height={40}
+                dataKey="month" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                dy={10}
               />
               <YAxis 
-                stroke="var(--text-muted)" 
-                fontSize={12} 
-                tickLine={false} 
-                axisLine={false}
-                tickFormatter={(val) => `₩${(val / 10000).toFixed(0)}만`} 
+                hide 
               />
               <Tooltip 
-                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--text-main)' }}
-                formatter={(value: any) => `₩ ${Number(value).toLocaleString()}`}
+                contentStyle={{ 
+                  backgroundColor: 'rgba(15, 23, 42, 0.9)', 
+                  borderRadius: '12px', 
+                  border: '1px solid var(--glass-border)',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                }}
+                itemStyle={{ fontSize: '12px' }}
+                formatter={(val: number) => `₩${val.toLocaleString()}`}
               />
-              <Legend 
-                wrapperStyle={{ paddingTop: '20px' }} 
-                formatter={(value) => <span className="notranslate">{value}</span>}
-              />
-              <Bar name="수입" dataKey="수입" fill="var(--success)" radius={[4, 4, 0, 0]} maxBarSize={40} style={{ cursor: onBarClick ? 'pointer' : 'default' }} onClick={(data: any) => { if (onBarClick && data?.name) onBarClick(data.name); }} />
-              <Bar name="지출" dataKey="지출" fill="var(--danger)" radius={[4, 4, 0, 0]} maxBarSize={40} style={{ cursor: onBarClick ? 'pointer' : 'default' }} onClick={(data: any) => { if (onBarClick && data?.name) onBarClick(data.name); }} />
+              <Bar dataKey="income" fill="var(--success)" radius={[4, 4, 0, 0]} barSize={20} />
+              <Bar dataKey="expense" fill="var(--danger)" radius={[4, 4, 0, 0]} barSize={20} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Category Donut Chart */}
+      {/* Expense Pie Chart */}
       <div className="glass" style={{ padding: '1.5rem' }}>
-        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', fontWeight: '600' }}>카테고리별 지출 비율 (누적)</h3>
-        {categoryData.length > 0 ? (
-          <div style={{ width: '100%', height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                  onClick={(data) => {
-                    if (onCategoryClick && data && data.name) {
-                      onCategoryClick(data.name);
-                    }
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {categoryData.map((_entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--text-main)' }}
-                  formatter={(value: any) => `₩ ${Number(value).toLocaleString()}`}
-                />
-                <Legend 
-                  layout="vertical" 
-                  verticalAlign="middle" 
-                  align="right" 
-                  wrapperStyle={{ paddingLeft: '20px', cursor: onCategoryClick ? 'pointer' : 'default' }} 
-                  onClick={(e: any) => {
-                    if (onCategoryClick && e && e.value) {
-                      onCategoryClick(e.value);
-                    }
-                  }}
-                  formatter={(value) => <span className="notranslate">{value}</span>}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-            지출 내역이 없습니다.
-          </div>
-        )}
+        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', fontWeight: '600' }}>카테고리별 지출 비율</h3>
+        <div style={{ width: '100%', height: '300px' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={expenseByCategory}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {expenseByCategory.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(15, 23, 42, 0.9)', 
+                  borderRadius: '12px', 
+                  border: '1px solid var(--glass-border)' 
+                }}
+                formatter={(val: number) => `₩${val.toLocaleString()}`}
+              />
+              <Legend 
+                layout="vertical" 
+                align="right" 
+                verticalAlign="middle"
+                iconType="circle"
+                wrapperStyle={{ paddingLeft: '20px', fontSize: '12px' }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
     </div>
