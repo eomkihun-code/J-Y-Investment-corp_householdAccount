@@ -18,7 +18,8 @@ import { format, parseISO, subMonths, differenceInMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
 interface AnalyticsChartsProps {
-  transactions: Transaction[];
+  transactions: Transaction[]; // For Trend Chart (History)
+  filteredTransactions: Transaction[]; // For Pie Chart (Current Focus)
   onCategoryClick: (category: string) => void;
   selectedCategory: string | null;
   onBarClick?: (monthStr: string) => void;
@@ -30,11 +31,12 @@ const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#f59e0b', '#10b981'
 
 export default function AnalyticsCharts({ 
   transactions, 
+  filteredTransactions,
   selectedCategory, 
   onCategoryClick,
   onBarClick 
 }: AnalyticsChartsProps) {
-  const version = "v1.2.7-stable"; // Version stamp for verification
+  const version = "v1.2.8-stable"; // Version stamp for verification
   const [duration, setDuration] = useState<ChartDuration>('12');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -85,7 +87,8 @@ export default function AnalyticsCharts({
 
   // 2. 카테고리별 지출 비율 데이터 가공
   const expenseByCategory = useMemo(() => {
-    const expenses = transactions.filter(t => t.type === 'expense');
+    // 이제 대시보드의 필터나 막대 클릭(filteredTransactions)을 따름
+    const expenses = filteredTransactions.filter(t => t.type === 'expense');
     const categories: Record<string, number> = {};
     expenses.forEach(t => {
       categories[t.category] = (categories[t.category] || 0) + Math.abs(t.amount);
@@ -94,7 +97,7 @@ export default function AnalyticsCharts({
     return Object.entries(categories)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-  }, [transactions]);
+  }, [filteredTransactions]);
 
   // 금액 포맷터 (단위: 만원)
   const formatAmount = (val: any) => {
@@ -228,6 +231,14 @@ export default function AnalyticsCharts({
                     onCategoryClick(data.value);
                   }
                 }}
+                formatter={(value, entry: any) => (
+                  <span style={{ color: 'var(--text-muted)', display: 'inline-flex', justifyContent: 'space-between', minWidth: '150px' }}>
+                    <span>{value}</span>
+                    <span style={{ color: entry.color, marginLeft: '12px', fontWeight: '600' }}>
+                      ₩{(entry.payload.value || 0).toLocaleString()}
+                    </span>
+                  </span>
+                )}
               />
             </PieChart>
           </ResponsiveContainer>
