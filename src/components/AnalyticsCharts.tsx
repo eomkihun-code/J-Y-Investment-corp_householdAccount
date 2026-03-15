@@ -90,11 +90,11 @@ export default function AnalyticsCharts({
   return (
     <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
       
-      {/* Monthly Bar Chart */}
+      {/* Monthly Bar Chart v1.1 */}
       <div className="glass" style={{ padding: '1.5rem' }}>
         <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: '600' }}>
-            월별 수입/지출 추이 (v1.1) {selectedCategory && <span style={{ color: 'var(--primary)', fontSize: '0.9rem', marginLeft: '8px' }}>({selectedCategory}만 표시 중)</span>}
+            월별 수입/지출 추이 {selectedCategory && <span style={{ color: 'var(--primary)', fontSize: '0.9rem', marginLeft: '8px' }}>({selectedCategory}만 표시 중)</span>}
           </h3>
           <div className="filter-presets" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '4px', gap: '2px' }}>
             {[
@@ -122,7 +122,7 @@ export default function AnalyticsCharts({
               margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
               onClick={(data) => {
                 if (data && data.activeLabel && onBarClick) {
-                  onBarClick(data.activeLabel);
+                  onBarClick(String(data.activeLabel));
                 }
               }}
             >
@@ -145,7 +145,7 @@ export default function AnalyticsCharts({
                   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                 }}
                 itemStyle={{ fontSize: '12px' }}
-                formatter={(val: number) => `₩${val.toLocaleString()}`}
+                formatter={(val: any) => `₩${Number(val || 0).toLocaleString()}`}
               />
               <Bar dataKey="income" fill="var(--success)" radius={[4, 4, 0, 0]} barSize={20} />
               <Bar dataKey="expense" fill="var(--danger)" radius={[4, 4, 0, 0]} barSize={20} />
@@ -179,7 +179,7 @@ export default function AnalyticsCharts({
                   borderRadius: '12px', 
                   border: '1px solid var(--glass-border)' 
                 }}
-                formatter={(val: number) => `₩${val.toLocaleString()}`}
+                formatter={(val: any) => `₩${Number(val || 0).toLocaleString()}`}
               />
               <Legend 
                 layout="vertical" 
