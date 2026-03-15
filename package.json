@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.1",
+    "@types/papaparse": "^5.5.2",
     "@types/react-calendar": "^3.9.0",
     "date-fns": "^4.1.0",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.577.0",
+    "papaparse": "^5.5.3",
     "react": "^19.2.0",
     "react-calendar": "^6.0.0",
     "react-dom": "^19.2.0",
