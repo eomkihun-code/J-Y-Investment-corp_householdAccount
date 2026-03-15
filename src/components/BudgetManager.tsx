@@ -197,7 +197,7 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
   if (isLoading) return null;
 
   return (
-    <div className="glass" style={{ padding: '2rem' }}>
+    <div className="glass notranslate" style={{ padding: '2rem' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

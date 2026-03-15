@@ -92,9 +92,10 @@ export default function Dashboard() {
 
   // 월별 막대 그래프 클릭 시 해당 월로 기간 변경
   const handleBarClick = useCallback((monthStr: string) => {
-    const match = monthStr.match(/(\d{4})년\s*(\d{2})월/);
+    // 'yy.MM' 형태 파싱 (예: '25.03')
+    const match = monthStr.match(/(\d{2})\.(\d{2})/);
     if (match) {
-      const year = parseInt(match[1]);
+      const year = 2000 + parseInt(match[1]);
       const month = parseInt(match[2]) - 1; // 0-indexed
       const targetDate = new Date(year, month, 1);
       const start = format(startOfMonth(targetDate), 'yyyy-MM-dd');
@@ -179,6 +180,28 @@ export default function Dashboard() {
     if (!session) return;
     
     try {
+      // 파일명에 '고정비'가 포함된 경우 고정비 테이블로 라우팅
+      if (fileName.includes('고정비')) {
+        // 기존 고정비 삭제 (전체 교체 방식)
+        await supabase.from('fixed_costs').delete().eq('user_id', session.user.id);
+        
+        const { error: fixedError } = await supabase
+          .from('fixed_costs')
+          .insert(newTxs.map(t => ({
+            user_id: session.user.id,
+            category: t.category,
+            item: t.description,
+            amount: t.amount,
+            note: '',
+            auto_transfer: t.cardType || '미설정'
+          })));
+        
+        if (fixedError) throw fixedError;
+        alert("고정비 항목이 성공적으로 업데이트되었습니다.");
+        window.location.reload(); 
+        return;
+      }
+
       // Supabase 테이블 구조에 맞게 매핑
       const dbTxs = newTxs.map(t => ({
         user_id: session.user.id,
@@ -195,6 +218,7 @@ export default function Dashboard() {
       
       // 재로드
       fetchTransactions(session.user.id);
+      alert(`${newTxs.length}건의 내역이 업로드되었습니다.`);
     } catch (e) {
       console.error("Upload to Supabase failed", e);
       alert("데이터를 저장하지 못했습니다.");
@@ -203,19 +227,35 @@ export default function Dashboard() {
 
   const handleDeleteAll = async () => {
     if (!session) return;
+    
     try {
-      const { error } = await supabase
+      setIsLoading(true);
+      // 지출 내역 삭제
+      const { error: txError } = await supabase
         .from('transactions')
         .delete()
         .eq('user_id', session.user.id);
       
-      if (error) throw error;
+      if (txError) throw txError;
+
+      // 고정비 내역 삭제
+      const { error: fxError } = await supabase
+        .from('fixed_costs')
+        .delete()
+        .eq('user_id', session.user.id);
+      
+      if (fxError) throw fxError;
       
       setTransactions([]);
       setUploadedFiles([]);
       setShowDeleteModal(false);
+      alert("모든 데이터(지출 내역 및 고정비)가 삭제되었습니다.");
+      window.location.reload(); 
     } catch (e) {
       console.error("Delete all failed", e);
+      alert("삭제 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -44,13 +44,13 @@ export default function AnalyticsCharts({
     const today = new Date();
     for (let i = 11; i >= 0; i--) {
       const d = subMonths(today, i);
-      const mLabel = format(d, 'yyyy년 MM월', { locale: ko });
+      const mLabel = format(d, 'yy.MM', { locale: ko });
       months.push(mLabel);
     }
     
     const grouped = chartTransactions.reduce((acc, tx) => {
       try {
-        const month = format(parseISO(tx.date), 'yyyy년 MM월', { locale: ko });
+        const month = format(parseISO(tx.date), 'yy.MM', { locale: ko });
         if (acc[month]) {
           if (tx.type === 'income') acc[month].수입 += tx.amount;
           if (tx.type === 'expense') acc[month].지출 += tx.amount;
@@ -105,13 +105,12 @@ export default function AnalyticsCharts({
               <XAxis 
                 dataKey="name" 
                 stroke="var(--text-muted)" 
-                fontSize={9} 
+                fontSize={10} 
                 tickLine={false} 
                 axisLine={false} 
                 interval={0}
-                angle={-15}
-                textAnchor="end"
-                height={60}
+                textAnchor="middle"
+                height={40}
               />
               <YAxis 
                 stroke="var(--text-muted)" 

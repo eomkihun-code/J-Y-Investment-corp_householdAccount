@@ -90,7 +90,7 @@ export default function CalendarWidget({ transactions, onDayClick }: CalendarWid
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+    <div className="notranslate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
       
       {/* Calendar Area */}
       <div className="glass custom-calendar-wrapper" style={{ padding: '2rem' }}>
