@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { FileSpreadsheet, CheckCircle, Database, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import Papa from 'papaparse';
+import { format } from 'date-fns';
 import type { Transaction, TransactionType } from '../types/transaction';
 
 interface ExcelUploadWidgetProps {
@@ -15,55 +15,71 @@ function refineData(rawData: any[]): Transaction[] {
   const transactions: Transaction[] = [];
 
   for (const row of rawData) {
-    // 1. 헤더 공백 제거 및 동적 키 찾기 (사용자 요청: header.trim().replace(/\s+/g, ''))
-    // PapaParse의 경우 transformHeader를 쓰지만, Excel(XLSX)은 직접 찾아야 함
-    const keys = Object.keys(row);
+    // 1. 헤더 공백 제거 및 새로운 키로 매핑 (사용자 요청: 금액 (원) -> 금액(원))
+    const cleanRow: any = {};
+    Object.keys(row).forEach(key => {
+      const cleanKey = key.trim().replace(/\s+/g, '');
+      cleanRow[cleanKey] = row[key];
+    });
+
+    const keys = Object.keys(cleanRow);
     
-    // 금액 키 찾기 (사용자 요청: key.includes('금액'))
-    const amountKey = keys.find(key => key.toLowerCase().includes('금액'));
+    // 2. 금액이라는 단어가 포함된 키를 동적으로 찾기 (사용자 요청)
+    const amountKey = keys.find(key => key.includes('금액'));
+    
     // 날짜 키 찾기
     const dateKey = keys.find(key => 
-      ['승인일자', '날짜', '일자', '결제일'].some(kw => key.toLowerCase().includes(kw))
+      ['승인일자', '날짜', '일자', '결제일'].some(kw => key.includes(kw))
     );
     // 가맹점명 키 찾기
     const descKey = keys.find(key => 
-      ['가맹점명', '가맹점', '항목', '내용', '상호명', '사용처'].some(kw => key.toLowerCase().includes(kw))
+      ['가맹점명', '가맹점', '항목', '내용', '상호명', '사용처'].some(kw => key.includes(kw))
     );
     // 카드사 키 찾기
     const cardKey = keys.find(key => 
-      ['카드사', '카드종류', '카드'].some(kw => key.toLowerCase().includes(kw))
+      ['카드사', '카드종류', '카드'].some(kw => key.includes(kw))
     );
     // 카테고리 키 찾기
     const categoryKey = keys.find(key => 
-      ['대분류', '분류', '카테고리'].some(kw => key.toLowerCase().includes(kw))
+      ['대분류', '분류', '카테고리'].some(kw => key.includes(kw))
     );
 
     if (!amountKey || !dateKey || !descKey) continue;
 
-    const rawAmount = row[amountKey];
-    const rawDate = String(row[dateKey] || '').trim();
-    const description = String(row[descKey] || '').trim();
-    const cardType = cardKey ? String(row[cardKey] || '').trim() : '';
-    const category = categoryKey ? String(row[categoryKey] || '').trim() : '기타';
+    const rawAmount = cleanRow[amountKey];
+    const rawDate = cleanRow[dateKey];
+    const description = String(cleanRow[descKey] || '').trim();
+    const cardType = cardKey ? String(cleanRow[cardKey] || '').trim() : '';
+    const category = categoryKey ? String(cleanRow[categoryKey] || '').trim() : '기타';
 
-    // 2. 결제 금액 0원(포인트 결제) 방어 로직 (사용자 요청)
+    // 3. 결제 금액 0원(포인트 결제) 및 마이너스(-) 부호 방어 로직 (사용자 요청)
     if (rawAmount === undefined || rawAmount === null || String(rawAmount).trim() === '') continue;
 
-    // 3. 완벽한 숫자 형변환 (마이너스 부호 유지, 사용자 요청)
+    // 정규식 /[^0-9-]/g 사용하여 콤마나 화폐 기호 제거 (사용자 요청)
     const cleanAmountStr = String(rawAmount).replace(/[^0-9-]/g, '');
-    const amount = parseInt(cleanAmountStr, 10);
+    const amount = Number(cleanAmountStr);
 
     if (isNaN(amount) || !description) continue;
 
-    // 4. 날짜 파싱
-    let dateStr = new Date().toISOString();
-    const match = rawDate.match(/(\d{2,4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
-    if (match) {
-      let year = parseInt(match[1]);
-      if (year < 100) year = year > 50 ? 1900 + year : 2000 + year;
-      const month = match[2].padStart(2, '0');
-      const day = match[3].padStart(2, '0');
-      dateStr = new Date(`${year}-${month}-${day}T00:00:00`).toISOString();
+    // 4. 날짜 데이터 변환 (엑셀 일련번호 포맷 대응, 사용자 요청)
+    let dateStr = '';
+    if (typeof rawDate === 'number') {
+      // 엑셀 일련번호 (Serial Number)인 경우
+      const dateObj = XLSX.SSF.parse_date_code(rawDate);
+      dateStr = `${dateObj.y}-${String(dateObj.m).padStart(2, '0')}-${String(dateObj.d).padStart(2, '0')}`;
+    } else {
+      // 문자열인 경우 기존 날짜 추출 로직 사용 후 YYYY-MM-DD 포맷팅
+      const dateString = String(rawDate || '').trim();
+      const match = dateString.match(/(\d{2,4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+      if (match) {
+        let year = parseInt(match[1]);
+        if (year < 100) year = year > 50 ? 1900 + year : 2000 + year;
+        const month = match[2].padStart(2, '0');
+        const day = match[3].padStart(2, '0');
+        dateStr = `${year}-${month}-${day}`;
+      } else {
+        dateStr = format(new Date(), 'yyyy-MM-dd');
+      }
     }
 
     // 5. 타입 설정 (환불은 마이너스 지출로 유지)
@@ -74,7 +90,7 @@ function refineData(rawData: any[]): Transaction[] {
 
     transactions.push({
       id: crypto.randomUUID(),
-      date: dateStr,
+      date: new Date(dateStr).toISOString(), // 내부 저장은 ISO
       description,
       amount,
       type,
@@ -96,42 +112,26 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
     setSuccessMsg('');
     const reader = new FileReader();
     const fileName = file.name;
-    const isCsv = fileName.toLowerCase().endsWith('.csv');
 
     reader.onload = (e) => {
       try {
-        let finalTransactions: Transaction[] = [];
+        const arrayBuffer = e.target?.result as ArrayBuffer;
+        if (!arrayBuffer) throw new Error("File is empty");
 
-        if (isCsv) {
-          // 1. CSV 파싱 (PapaParse 사용 - 사용자 요청 설정)
-          const text = e.target?.result as string;
-          const parseResult = Papa.parse(text, {
-            header: true,
-            skipEmptyLines: true,
-            quoteChar: '"',
-            transformHeader: (header) => header.trim().replace(/\s+/g, '')
-          });
-          finalTransactions = refineData(parseResult.data);
-        } else {
-          // 2. Excel 파싱 (xlsx 사용)
-          const arrayBuffer = e.target?.result as ArrayBuffer;
-          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          
-          if (!worksheet) throw new Error("시트를 찾을 수 없습니다.");
-          
-          const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-          // 엑셀 데이터의 헤더도 공백 제거 처리하여 refineData에 전달
-          const normalizedData = (rawData as any[]).map(row => {
-            const newRow: any = {};
-            Object.keys(row).forEach(key => {
-              newRow[key.trim().replace(/\s+/g, '')] = row[key];
-            });
-            return newRow;
-          });
-          finalTransactions = refineData(normalizedData);
-        }
+        // 1. SheetJS(xlsx)로 파일을 읽어들임 (CSV와 엑셀 모두 지원)
+        const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: false });
+        
+        // 2. 첫 번째 시트 확보
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        if (!worksheet) throw new Error("시트를 찾을 수 없습니다.");
+        
+        // 3. 즉시 JSON 배열로 변환 (XLSX.utils.sheet_to_json)
+        const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+        
+        // 4. 핵심 방어 로직이 포함된 정제 단계 수행
+        const finalTransactions = refineData(rawData);
 
         setIsUploading(false);
         
@@ -140,23 +140,20 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
           return;
         }
         
-        setSuccessMsg(`${finalTransactions.length}건의 거래 내역을 불러왔습니다.`);
+        setSuccessMsg(`${finalTransactions.length}건의 거래 내역을 불러와 정제를 마쳤습니다.`);
         setTimeout(() => setSuccessMsg(''), 4000);
         
+        // 5. 정제된 결과만 전달
         onUploadSuccess(finalTransactions, fileName);
         
       } catch (err) {
         console.error("Error parsing file:", err);
         setIsUploading(false);
-        alert("파일 분석에 실패했습니다. 양식이 맞는지 확인해주세요.\n[필수: 승인일자, 가맹점명, 승인금액 열이 포함되어야 합니다]");
+        alert("파일 분석에 실패했습니다. 올바른 엑셀 또는 CSV 파일인지 확인해주세요.");
       }
     };
     
-    if (isCsv) {
-      reader.readAsText(file, 'euc-kr'); // 한국어 CSV 고려 (필요시 utf-8로 시도 가능)
-    } else {
-      reader.readAsArrayBuffer(file);
-    }
+    reader.readAsArrayBuffer(file);
   };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
