@@ -34,7 +34,7 @@ export default function AnalyticsCharts({
   onCategoryClick,
   onBarClick 
 }: AnalyticsChartsProps) {
-  const version = "v1.2.5-stable"; // Version stamp for verification
+  const version = "v1.2.6-stable"; // Version stamp for verification
   const [duration, setDuration] = useState<ChartDuration>('12');
   const [isMounted, setIsMounted] = useState(false);
 
