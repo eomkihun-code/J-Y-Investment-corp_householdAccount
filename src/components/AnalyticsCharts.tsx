@@ -128,7 +128,7 @@ export default function AnalyticsCharts({
           </div>
         </div>
         <div style={{ width: '100%', height: '300px' }}>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="99%" height="100%">
             <BarChart
               data={monthlyData}
               margin={{ top: 20, right: 10, left: 10, bottom: 0 }}
@@ -174,7 +174,7 @@ export default function AnalyticsCharts({
       <div className="glass" style={{ padding: '1.5rem' }}>
         <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', fontWeight: '600' }}>카테고리별 지출 비율</h3>
         <div style={{ width: '100%', height: '300px' }}>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="99%" height="100%">
             <PieChart>
               <Pie
                 data={expenseByCategory}
