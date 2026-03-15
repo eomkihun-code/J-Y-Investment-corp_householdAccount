@@ -119,32 +119,31 @@ export default function TransactionFilter({ transactions, onFilterChange, extern
         </div>
 
         {/* Filter Toggle for Mobile / Details */}
-        <div className="mobile-gap-sm" style={{ display: 'flex', gap: '8px' }}>
-          <div className="filter-presets" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '4px' }}>
+        <div style={{ display: 'flex', gap: '8px', flex: '1 1 auto', minWidth: 0 }}>
+          <div className="filter-presets" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '4px', flex: 1 }}>
             <button 
               className={`btn ${filter.datePreset === 'thisMonth' ? 'btn-primary' : 'btn-ghost'}`} 
-              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+              style={{ padding: '6px 8px', fontSize: '0.8rem', flex: 1 }}
               onClick={() => handleDatePresetChange('thisMonth')}
             >이번 달</button>
             <button 
               className={`btn ${filter.datePreset === 'thisYear' ? 'btn-primary' : 'btn-ghost'}`} 
-              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+              style={{ padding: '6px 8px', fontSize: '0.8rem', flex: 1 }}
               onClick={() => handleDatePresetChange('thisYear')}
             >올해</button>
             <button 
               className={`btn ${filter.datePreset === 'all' ? 'btn-primary' : 'btn-ghost'}`} 
-              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+              style={{ padding: '6px 8px', fontSize: '0.8rem', flex: 1 }}
               onClick={() => handleDatePresetChange('all')}
             >전체</button>
           </div>
           
           <button 
             className={`btn ${isFilterOpen ? 'btn-primary' : 'btn-ghost'}`} 
-            style={{ padding: '8px 12px', border: '1px solid var(--glass-border)', flex: 1 }}
+            style={{ padding: '8px 12px', border: '1px solid var(--glass-border)' }}
             onClick={() => setIsFilterOpen(!isFilterOpen)}
           >
             <Filter size={18} />
-            <span className="hidden-mobile">상세 필터</span>
           </button>
         </div>
       </div>
