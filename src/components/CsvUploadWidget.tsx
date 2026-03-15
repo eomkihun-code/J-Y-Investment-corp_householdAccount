@@ -33,9 +33,9 @@ function refineData(rows: any[][]): Transaction[] {
     ['대분류', '분류', '카테고리'].some(kw => h.includes(kw))
   );
 
-  // 필수 항목 누락 시 중단
-  if (amountIdx === -1 || dateIdx === -1 || descIdx === -1) {
-    console.error("필수 컬럼을 찾을 수 없습니다. (금액/날짜/항목 필드 필요)", cleanHeaders);
+  // 필수 항목 누락 시 중단 (날짜는 필수가 아님 - 고정비 등 대응)
+  if (amountIdx === -1 || descIdx === -1) {
+    console.error("필수 컬럼을 찾을 수 없습니다. (금액/항목 필드 필요)", cleanHeaders);
     return [];
   }
 
@@ -112,24 +112,41 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
   const processFile = (file: File) => {
     setIsUploading(true);
     setSuccessMsg('');
-    const reader = new FileReader();
     const fileName = file.name;
+    const isJson = fileName.toLowerCase().endsWith('.json');
+
+    const reader = new FileReader();
 
     reader.onload = (e) => {
       try {
+        if (isJson) {
+          const text = e.target?.result as string;
+          const jsonData = JSON.parse(text);
+          
+          const finalData = Array.isArray(jsonData) ? jsonData.map((item: any) => ({
+            id: item.id || crypto.randomUUID(),
+            date: item.date || item.승인일자 || new Date().toISOString(),
+            description: item.description || item.상세항목 || item['상세 항목'] || item.가맹점명 || '내역 없음',
+            amount: Number(String(item.amount || item.금액 || item['금액 (원)'] || item['승인금액(원)'] || 0).replace(/[^0-9-]/g, '')),
+            type: item.type || (Number(item.amount) > 0 ? 'income' : 'expense'),
+            category: item.category || item.대분류 || item.카테고리 || '기타',
+            cardType: item.cardType || item.카드사 || item['자동 이체 현황'] || ''
+          })) : [];
+
+          setIsUploading(false);
+          setSuccessMsg(`${finalData.length}건의 JSON 데이터를 불러왔습니다.`);
+          onUploadSuccess(finalData, fileName);
+          return;
+        }
+
         const arrayBuffer = e.target?.result as ArrayBuffer;
         if (!arrayBuffer) throw new Error("파일이 비어있습니다.");
 
-        // 1. SheetJS(xlsx) 통합 읽기 모드 (binary data)
         const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: false });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         if (!worksheet) throw new Error("첫 번째 시트를 찾을 수 없습니다.");
         
-        // 2. header: 1 옵션으로 '데이터 찢어짐' 원천 차단 (배열의 배열 형태)
-        // __parsed_extra 같은 구조가 생성되지 않도록 로 배열 자체를 직접 정제합니다.
         const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
-        
-        // 3. 평탄화 및 정제 수행 (사용자 요청 핵심 로직)
         const finalTransactions = refineData(rawRows);
 
         setIsUploading(false);
@@ -140,20 +157,21 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
         
         setSuccessMsg(`${finalTransactions.length}건의 데이터를 완벽하게 정제하여 불러왔습니다.`);
         setTimeout(() => setSuccessMsg(''), 4000);
-        
-        // 정제된 결과 Supabase로 전송하도록 부모 컴포넌트에 통보
         onUploadSuccess(finalTransactions, fileName);
         
       } catch (err) {
         console.error("Parsing failed:", err);
         setIsUploading(false);
-        alert("파일 분석 중 오류가 발생했습니다. 올바른 엑셀 또는 CSV 파일인지 확인해 주세요.");
+        alert("파일 분석 중 오류가 발생했습니다. 올바른 형식의 파일인지 확인해 주세요.");
       }
     };
     
-    reader.readAsArrayBuffer(file);
+    if (isJson) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
+    }
   };
-
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsHovering(false);
@@ -161,10 +179,10 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
       const ext = file.name.toLowerCase();
-      if (ext.endsWith('.xlsx') || ext.endsWith('.xls') || ext.endsWith('.csv')) {
+      if (ext.endsWith('.xlsx') || ext.endsWith('.xls') || ext.endsWith('.csv') || ext.endsWith('.json')) {
         processFile(file);
       } else {
-        alert("엑셀 파일(.xlsx, .xls) 또는 CSV 파일(.csv)만 업로드 가능합니다.");
+        alert("엑셀(.xlsx), CSV(.csv), 또는 JSON(.json) 파일만 업로드 가능합니다.");
       }
     }
   }, []);
@@ -237,7 +255,7 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
         <input 
           id="excel-upload-input"
           type="file" 
-          accept=".xlsx,.xls,.csv" 
+          accept=".xlsx,.xls,.csv,.json" 
           style={{ display: 'none' }}
           onChange={(e) => {
             if (e.target.files && e.target.files.length > 0) {
