@@ -38,7 +38,8 @@ export default function AnalyticsCharts({
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    const timer = setTimeout(() => setIsMounted(true), 500);
+    return () => clearTimeout(timer);
   }, []);
   
   // 1. 월별 수입/지출 추이 데이터 가공
