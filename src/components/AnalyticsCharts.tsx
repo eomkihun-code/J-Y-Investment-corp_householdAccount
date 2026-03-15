@@ -107,7 +107,9 @@ export default function AnalyticsCharts({
   };
 
   if (!isMounted) {
-    return <div style={{ minHeight: '600px' }} />; // Placeholder to maintain layout
+    return <div style={{ minHeight: '600px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+      {version} 초기화 중...
+    </div>; // Placeholder with version for verification
   }
 
   return (
