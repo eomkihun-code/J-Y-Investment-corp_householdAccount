@@ -10,66 +10,67 @@ interface ExcelUploadWidgetProps {
   uploadedFiles: string[];
 }
 
-// 추출된 로우 데이터를 정제하는 통합 함수 (사용자 요청 로직 반영)
-function refineData(rawData: any[]): Transaction[] {
+// 추출된 로우 데이터를 정제하는 통합 함수 (사용자 요청: 완벽한 평탄화 및 방어 로직)
+function refineData(rows: any[][]): Transaction[] {
+  if (rows.length < 2) return [];
+
+  // 1. 헤더 추출 및 정제 (공백 제거) - 첫 번째 줄을 헤더로 삼음
+  const rawHeaders = rows[0];
+  const cleanHeaders = rawHeaders.map(h => String(h || '').trim().replace(/\s+/g, ''));
+
+  // 동적 키 인덱스 찾기 (지능형 키워드 매칭)
+  const amountIdx = cleanHeaders.findIndex(h => h.includes('금액'));
+  const dateIdx = cleanHeaders.findIndex(h => 
+    ['승인일자', '날짜', '일자', '결제일'].some(kw => h.includes(kw))
+  );
+  const descIdx = cleanHeaders.findIndex(h => 
+    ['가맹점명', '가맹점', '항목', '내용', '상호명', '사용처', '상세'].some(kw => h.includes(kw))
+  );
+  const cardIdx = cleanHeaders.findIndex(h => 
+    ['카드사', '카드종류', '카드', '방법', '이체'].some(kw => h.includes(kw))
+  );
+  const categoryIdx = cleanHeaders.findIndex(h => 
+    ['대분류', '분류', '카테고리'].some(kw => h.includes(kw))
+  );
+
+  // 필수 항목 누락 시 중단
+  if (amountIdx === -1 || dateIdx === -1 || descIdx === -1) {
+    console.error("필수 컬럼을 찾을 수 없습니다. (금액/날짜/항목 필드 필요)", cleanHeaders);
+    return [];
+  }
+
   const transactions: Transaction[] = [];
 
-  for (const row of rawData) {
-    // 1. 헤더 공백 제거 및 새로운 키로 매핑 (사용자 요청: 금액 (원) -> 금액(원))
-    const cleanRow: any = {};
-    Object.keys(row).forEach(key => {
-      const cleanKey = key.trim().replace(/\s+/g, '');
-      cleanRow[cleanKey] = row[key];
-    });
+  // 2. 데이터 로우 순회 (헤더 다음인 index 1부터 시작)
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    // 빈 줄이거나 데이터가 너무 없으면 스킵
+    if (!row || row.length === 0 || (row.length === 1 && !row[0])) continue;
 
-    const keys = Object.keys(cleanRow);
-    
-    // 2. 금액이라는 단어가 포함된 키를 동적으로 찾기 (사용자 요청)
-    const amountKey = keys.find(key => key.includes('금액'));
-    
-    // 날짜 키 찾기
-    const dateKey = keys.find(key => 
-      ['승인일자', '날짜', '일자', '결제일'].some(kw => key.includes(kw))
-    );
-    // 가맹점명 키 찾기
-    const descKey = keys.find(key => 
-      ['가맹점명', '가맹점', '항목', '내용', '상호명', '사용처'].some(kw => key.includes(kw))
-    );
-    // 카드사 키 찾기
-    const cardKey = keys.find(key => 
-      ['카드사', '카드종류', '카드'].some(kw => key.includes(kw))
-    );
-    // 카테고리 키 찾기
-    const categoryKey = keys.find(key => 
-      ['대분류', '분류', '카테고리'].some(kw => key.includes(kw))
-    );
+    const rawAmount = row[amountIdx];
+    const rawDate = row[dateIdx];
+    const description = String(row[descIdx] || '').trim();
+    const cardType = cardIdx !== -1 ? String(row[cardIdx] || '').trim() : '';
+    const categoryName = categoryIdx !== -1 ? String(row[categoryIdx] || '').trim() : '기타';
 
-    if (!amountKey || !dateKey || !descKey) continue;
-
-    const rawAmount = cleanRow[amountKey];
-    const rawDate = cleanRow[dateKey];
-    const description = String(cleanRow[descKey] || '').trim();
-    const cardType = cardKey ? String(cleanRow[cardKey] || '').trim() : '';
-    const category = categoryKey ? String(cleanRow[categoryKey] || '').trim() : '기타';
-
-    // 3. 결제 금액 0원(포인트 결제) 및 마이너스(-) 부호 방어 로직 (사용자 요청)
+    // 3. 결제 금액 방어 로직 (0원 유실 방지, 마이너스 부호 유지)
     if (rawAmount === undefined || rawAmount === null || String(rawAmount).trim() === '') continue;
 
-    // 정규식 /[^0-9-]/g 사용하여 콤마나 화폐 기호 제거 (사용자 요청)
+    // 정규식 /[^0-9-]/g 사용하여 숫자와 마이너스 부호만 남김 (사용자 요청)
     const cleanAmountStr = String(rawAmount).replace(/[^0-9-]/g, '');
     const amount = Number(cleanAmountStr);
 
     if (isNaN(amount) || !description) continue;
 
-    // 4. 날짜 데이터 변환 (엑셀 일련번호 포맷 대응, 사용자 요청)
+    // 4. 날짜 데이터 안전 변환 (엑셀 일치번호 및 다양한 문자열 포맷 대응)
     let dateStr = '';
     if (typeof rawDate === 'number') {
-      // 엑셀 일련번호 (Serial Number)인 경우
+      // 엑셀 시리얼 날짜 코드인 경우
       const dateObj = XLSX.SSF.parse_date_code(rawDate);
       dateStr = `${dateObj.y}-${String(dateObj.m).padStart(2, '0')}-${String(dateObj.d).padStart(2, '0')}`;
     } else {
-      // 문자열인 경우 기존 날짜 추출 로직 사용 후 YYYY-MM-DD 포맷팅
       const dateString = String(rawDate || '').trim();
+      // 날짜 형태 추출 (YYYY-MM-DD 등)
       const match = dateString.match(/(\d{2,4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
       if (match) {
         let year = parseInt(match[1]);
@@ -82,19 +83,20 @@ function refineData(rawData: any[]): Transaction[] {
       }
     }
 
-    // 5. 타입 설정 (환불은 마이너스 지출로 유지)
+    // 5. 평탄화된 수입/지출 객체 생성
     let type: TransactionType = 'expense';
-    if (description.includes('입금') || category === '수입') {
+    // 금액이 양수이면서 특정 키워드(입금, 수입)가 포함된 경우만 수입으로 간주
+    if (amount > 0 && (description.includes('입금') || categoryName === '수입')) {
       type = 'income';
     }
 
     transactions.push({
       id: crypto.randomUUID(),
-      date: new Date(dateStr).toISOString(), // 내부 저장은 ISO
+      date: new Date(dateStr).toISOString(),
       description,
       amount,
       type,
-      category: category || '기타',
+      category: categoryName || '기타',
       cardType: cardType
     });
   }
@@ -116,40 +118,36 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
     reader.onload = (e) => {
       try {
         const arrayBuffer = e.target?.result as ArrayBuffer;
-        if (!arrayBuffer) throw new Error("File is empty");
+        if (!arrayBuffer) throw new Error("파일이 비어있습니다.");
 
-        // 1. SheetJS(xlsx)로 파일을 읽어들임 (CSV와 엑셀 모두 지원)
+        // 1. SheetJS(xlsx) 통합 읽기 모드 (binary data)
         const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: false });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        if (!worksheet) throw new Error("첫 번째 시트를 찾을 수 없습니다.");
         
-        // 2. 첫 번째 시트 확보
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
+        // 2. header: 1 옵션으로 '데이터 찢어짐' 원천 차단 (배열의 배열 형태)
+        // __parsed_extra 같은 구조가 생성되지 않도록 로 배열 자체를 직접 정제합니다.
+        const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
         
-        if (!worksheet) throw new Error("시트를 찾을 수 없습니다.");
-        
-        // 3. 즉시 JSON 배열로 변환 (XLSX.utils.sheet_to_json)
-        const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-        
-        // 4. 핵심 방어 로직이 포함된 정제 단계 수행
-        const finalTransactions = refineData(rawData);
+        // 3. 평탄화 및 정제 수행 (사용자 요청 핵심 로직)
+        const finalTransactions = refineData(rawRows);
 
         setIsUploading(false);
-        
         if (finalTransactions.length === 0) {
-          alert('파일에서 유효한 거래 내역을 찾지 못했습니다.\n시트 구조나 데이터를 확인해주세요.');
+          alert('유효한 거래 내역을 찾지 못했습니다. 파일의 열 이름(금액, 날짜, 가맹점 등)을 확인해 주세요.');
           return;
         }
         
-        setSuccessMsg(`${finalTransactions.length}건의 거래 내역을 불러와 정제를 마쳤습니다.`);
+        setSuccessMsg(`${finalTransactions.length}건의 데이터를 완벽하게 정제하여 불러왔습니다.`);
         setTimeout(() => setSuccessMsg(''), 4000);
         
-        // 5. 정제된 결과만 전달
+        // 정제된 결과 Supabase로 전송하도록 부모 컴포넌트에 통보
         onUploadSuccess(finalTransactions, fileName);
         
       } catch (err) {
-        console.error("Error parsing file:", err);
+        console.error("Parsing failed:", err);
         setIsUploading(false);
-        alert("파일 분석에 실패했습니다. 올바른 엑셀 또는 CSV 파일인지 확인해주세요.");
+        alert("파일 분석 중 오류가 발생했습니다. 올바른 엑셀 또는 CSV 파일인지 확인해 주세요.");
       }
     };
     
@@ -275,7 +273,7 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
               결제내역이 포함된 엑셀(.xlsx) 또는 CSV(.csv) 파일을 여기에 끌어다 놓으세요.
             </p>
             <div style={{ padding: '0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              <strong>필수 포함 항목:</strong> 승인일자, 가맹점명, 승인금액 (공백이나 따옴표 포함 정석 CSV 지원)
+              <strong>필수 포함 항목:</strong> 승인일자, 가맹점명, 승인금액 (공백이나 따옴표 포함 정석 CSV 지원, 평탄화 JSON 보장)
             </div>
           </>
         )}
