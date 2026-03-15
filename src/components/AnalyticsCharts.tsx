@@ -10,7 +10,8 @@ import {
   Cell,
   PieChart,
   Pie,
-  Legend
+  Legend,
+  LabelList
 } from 'recharts';
 import type { Transaction } from '../types/transaction';
 import { format, parseISO, subMonths, differenceInMonths } from 'date-fns';
@@ -30,6 +31,7 @@ const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#f59e0b', '#10b981'
 export default function AnalyticsCharts({ 
   transactions, 
   selectedCategory, 
+  onCategoryClick,
   onBarClick 
 }: AnalyticsChartsProps) {
   const [duration, setDuration] = useState<ChartDuration>('12');
@@ -87,6 +89,16 @@ export default function AnalyticsCharts({
       .sort((a, b) => b.value - a.value);
   }, [transactions]);
 
+  // 금액 포맷터 (단위: 만원)
+  const formatAmount = (val: any) => {
+    const num = Number(val || 0);
+    if (num === 0) return '';
+    if (num >= 10000) {
+      return `${Math.floor(num / 10000)}만`;
+    }
+    return num.toLocaleString();
+  };
+
   return (
     <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
       
@@ -119,7 +131,7 @@ export default function AnalyticsCharts({
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={monthlyData}
-              margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+              margin={{ top: 20, right: 10, left: 10, bottom: 0 }}
               onClick={(data) => {
                 if (data && data.activeLabel && onBarClick) {
                   onBarClick(String(data.activeLabel));
@@ -147,8 +159,12 @@ export default function AnalyticsCharts({
                 itemStyle={{ fontSize: '12px' }}
                 formatter={(val: any) => `₩${Number(val || 0).toLocaleString()}`}
               />
-              <Bar dataKey="income" fill="var(--success)" radius={[4, 4, 0, 0]} barSize={20} />
-              <Bar dataKey="expense" fill="var(--danger)" radius={[4, 4, 0, 0]} barSize={20} />
+              <Bar dataKey="income" fill="var(--success)" radius={[4, 4, 0, 0]} barSize={20}>
+                <LabelList dataKey="income" position="top" formatter={formatAmount} style={{ fill: 'var(--success)', fontSize: '10px', fontWeight: '500' }} />
+              </Bar>
+              <Bar dataKey="expense" fill="var(--danger)" radius={[4, 4, 0, 0]} barSize={20}>
+                <LabelList dataKey="expense" position="top" formatter={formatAmount} style={{ fill: 'var(--danger)', fontSize: '10px', fontWeight: '500' }} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -168,6 +184,12 @@ export default function AnalyticsCharts({
                 outerRadius={80}
                 paddingAngle={5}
                 dataKey="value"
+                onClick={(data) => {
+                  if (data && data.name) {
+                    onCategoryClick(data.name);
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
               >
                 {expenseByCategory.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -187,6 +209,11 @@ export default function AnalyticsCharts({
                 verticalAlign="middle"
                 iconType="circle"
                 wrapperStyle={{ paddingLeft: '20px', fontSize: '12px' }}
+                onClick={(data) => {
+                  if (data && data.value) {
+                    onCategoryClick(data.value);
+                  }
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
