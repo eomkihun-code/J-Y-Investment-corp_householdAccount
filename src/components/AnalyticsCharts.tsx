@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -35,6 +35,11 @@ export default function AnalyticsCharts({
   onBarClick 
 }: AnalyticsChartsProps) {
   const [duration, setDuration] = useState<ChartDuration>('12');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   // 1. 월별 수입/지출 추이 데이터 가공
   const monthlyData = useMemo(() => {
@@ -98,6 +103,10 @@ export default function AnalyticsCharts({
     }
     return num.toLocaleString();
   };
+
+  if (!isMounted) {
+    return <div style={{ minHeight: '600px' }} />; // Placeholder to maintain layout
+  }
 
   return (
     <div className="stats-grid notranslate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(0, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
