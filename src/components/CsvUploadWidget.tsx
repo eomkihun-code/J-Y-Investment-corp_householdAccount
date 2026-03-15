@@ -193,7 +193,7 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
     <div>
       {/* 저장된 데이터 상태 표시 */}
       {hasData && (
-        <div className="glass" style={{ 
+        <div className="glass mobile-stack" style={{ 
           padding: '1rem 1.5rem', 
           marginBottom: '0.75rem', 
           display: 'flex', 

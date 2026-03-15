@@ -88,7 +88,7 @@ export default function AnalyticsCharts({
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+    <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
       
       {/* Monthly Bar Chart */}
       <div className="glass" style={{ padding: '1.5rem' }}>

@@ -305,7 +305,7 @@ export default function Dashboard() {
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
       
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+      <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>환영합니다,</p>
           <h1 style={{ fontSize: '1.75rem', fontWeight: '700' }}>{session?.user?.email?.split('@')[0]} 님</h1>
@@ -316,7 +316,7 @@ export default function Dashboard() {
         </button>
       </header>
 
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+      <div className="dashboard-main-layout" style={{ display: 'flex', gap: '2rem', flexWrap: 'nowrap', alignItems: 'flex-start' }}>
         <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           <section>
             <CsvUploadWidget 
@@ -333,7 +333,7 @@ export default function Dashboard() {
           />
 
           <div ref={dashboardRef}>
-            <section className="notranslate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <section className="notranslate stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
               <div className="glass" style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
                   <div style={{ padding: '10px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', color: 'var(--primary)' }}>
@@ -341,7 +341,7 @@ export default function Dashboard() {
                   </div>
                   <h3 style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: '500' }}>{stats.latestMonthStr} 순수익</h3>
                 </div>
-                <p style={{ fontSize: '2.5rem', fontWeight: '700' }}>₩ {stats.currentNet.toLocaleString()}</p>
+                <p className="stats-value" style={{ fontSize: '2.5rem', fontWeight: '700' }}>₩ {stats.currentNet.toLocaleString()}</p>
               </div>
 
               <div className="glass" style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}>
@@ -351,7 +351,7 @@ export default function Dashboard() {
                   </div>
                   <h3 style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: '500' }}>{stats.latestMonthStr} 지출</h3>
                 </div>
-                <p style={{ fontSize: '2rem', fontWeight: '600', color: 'var(--danger)' }}>₩ {stats.currentExpense.toLocaleString()}</p>
+                <p className="stats-value" style={{ fontSize: '2rem', fontWeight: '600', color: 'var(--danger)' }}>₩ {stats.currentExpense.toLocaleString()}</p>
               </div>
 
               <div className="glass" style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}>
@@ -361,7 +361,7 @@ export default function Dashboard() {
                   </div>
                   <h3 style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: '500' }}>{stats.latestMonthStr} 수입</h3>
                 </div>
-                <p style={{ fontSize: '2rem', fontWeight: '600', color: 'var(--success)' }}>₩ {stats.currentIncome.toLocaleString()}</p>
+                <p className="stats-value" style={{ fontSize: '2rem', fontWeight: '600', color: 'var(--success)' }}>₩ {stats.currentIncome.toLocaleString()}</p>
               </div>
             </section>
 
@@ -394,7 +394,7 @@ export default function Dashboard() {
         </div>
 
         {selectedCategory && (
-          <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: '520px', zIndex: 1000, borderLeft: '1px solid var(--glass-border)', boxShadow: '-8px 0 32px rgba(0,0,0,0.5)' }} className="glass">
+          <div className="glass mobile-full-sidebar" style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: '520px', zIndex: 1000, borderLeft: '1px solid var(--glass-border)', boxShadow: '-8px 0 32px rgba(0,0,0,0.5)' }}>
             <div style={{ padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', height: '100vh' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: '600' }}>'{selectedCategory}' 내역</h2>

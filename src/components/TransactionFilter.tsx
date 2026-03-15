@@ -119,8 +119,8 @@ export default function TransactionFilter({ transactions, onFilterChange, extern
         </div>
 
         {/* Filter Toggle for Mobile / Details */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <div className="filter-presets" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '4px' }}>
+        <div className="mobile-gap-sm" style={{ display: 'flex', gap: '8px' }}>
+          <div className="filter-presets mobile-hide" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '4px' }}>
             <button 
               className={`btn ${filter.datePreset === 'thisMonth' ? 'btn-primary' : 'btn-ghost'}`} 
               style={{ padding: '6px 12px', fontSize: '0.85rem' }}
@@ -140,7 +140,7 @@ export default function TransactionFilter({ transactions, onFilterChange, extern
           
           <button 
             className={`btn ${isFilterOpen ? 'btn-primary' : 'btn-ghost'}`} 
-            style={{ padding: '8px 12px', border: '1px solid var(--glass-border)' }}
+            style={{ padding: '8px 12px', border: '1px solid var(--glass-border)', flex: 1 }}
             onClick={() => setIsFilterOpen(!isFilterOpen)}
           >
             <Filter size={18} />

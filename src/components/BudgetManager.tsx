@@ -239,7 +239,7 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
 
       {/* Add Form */}
       {showAddForm && (
-        <form onSubmit={handleAddCost} className="glass" style={{ marginBottom: '2rem', padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', border: '1px solid var(--primary)' }}>
+        <form onSubmit={handleAddCost} className="glass mobile-stack" style={{ marginBottom: '2rem', padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', border: '1px solid var(--primary)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>카테고리</label>
             <select 
@@ -386,11 +386,12 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
               {!isCollapsed && (
                 <div>
                   {items.map((item, idx) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr auto auto auto',
+                      <div
+                        key={item.id}
+                        className="budget-row"
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr auto auto auto',
                         gap: '1rem',
                         padding: '0.7rem 1.25rem',
                         alignItems: 'center',
@@ -403,7 +404,7 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.note}</p>
                       </div>
                       <div style={{ fontWeight: '600' }}>₩ {item.amount.toLocaleString()}</div>
-                      <div style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '6px', background: `${getMethodColor(item.autoTransfer)}22`, color: getMethodColor(item.autoTransfer), border: `1px solid ${getMethodColor(item.autoTransfer)}44` }}>
+                      <div className="mobile-hide" style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '6px', background: `${getMethodColor(item.autoTransfer)}22`, color: getMethodColor(item.autoTransfer), border: `1px solid ${getMethodColor(item.autoTransfer)}44` }}>
                         {item.autoTransfer || '—'}
                       </div>
                       <button className="btn btn-ghost" style={{ padding: '4px', color: 'var(--danger)', opacity: 0.6 }} onClick={(e) => handleDeleteCost(item.id, e)}>
