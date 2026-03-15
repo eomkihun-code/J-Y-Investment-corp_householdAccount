@@ -118,6 +118,7 @@ export default function AnalyticsCharts({
         <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: '600' }}>
             월별 수입/지출 추이 {selectedCategory && <span style={{ color: 'var(--primary)', fontSize: '0.9rem', marginLeft: '8px' }}>({selectedCategory}만 표시 중)</span>}
+            <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginLeft: '8px', opacity: 0.5 }}>{version}</span>
           </h3>
           <div className="filter-presets" style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '4px', gap: '2px' }}>
             {[
@@ -139,7 +140,7 @@ export default function AnalyticsCharts({
           </div>
         </div>
         <div style={{ width: '100%', minHeight: '300px' }}>
-          <ResponsiveContainer width="100%" aspect={1.5}>
+          <ResponsiveContainer width="100%" height={300}>
             <BarChart
               data={monthlyData}
               margin={{ top: 20, right: 10, left: 10, bottom: 0 }}
@@ -185,7 +186,7 @@ export default function AnalyticsCharts({
       <div className="glass" style={{ padding: '1.5rem' }}>
         <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', fontWeight: '600' }}>카테고리별 지출 비율</h3>
         <div style={{ width: '100%', minHeight: '300px' }}>
-          <ResponsiveContainer width="100%" aspect={1.5}>
+          <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
                 data={expenseByCategory}
