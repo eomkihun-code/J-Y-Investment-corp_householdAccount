@@ -367,7 +367,7 @@ export default function Dashboard() {
 
             <section style={{ marginBottom: '2rem' }}>
               <AnalyticsCharts 
-                transactions={filteredTransactions} 
+                transactions={transactions} 
                 onCategoryClick={setSelectedCategory} 
                 selectedCategory={selectedCategory}
                 onBarClick={handleBarClick}
@@ -440,7 +440,7 @@ export default function Dashboard() {
         </div>
       )}
       <div style={{ marginTop: '4rem', paddingBottom: '2rem', textAlign: 'center', opacity: 0.3, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-        v1.2.3-stable (Final Mobile Fix)
+        v1.2.4-stable (Trend Fix)
       </div>
     </div>
   );

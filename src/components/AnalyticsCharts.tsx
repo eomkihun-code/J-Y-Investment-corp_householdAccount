@@ -34,7 +34,7 @@ export default function AnalyticsCharts({
   onCategoryClick,
   onBarClick 
 }: AnalyticsChartsProps) {
-  const version = "v1.2.3-stable"; // Version stamp for verification
+  const version = "v1.2.4-stable"; // Version stamp for verification
   const [duration, setDuration] = useState<ChartDuration>('12');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -72,7 +72,7 @@ export default function AnalyticsCharts({
     }
 
     return months.map(m => {
-      const monthTxs = filteredByCat.filter(t => format(parseISO(t.date), 'yy.MM') === m);
+      const monthTxs = filteredByCat.filter(t => format(parseISO(t.date), 'yy.MM', { locale: ko }) === m);
       const income = monthTxs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
       const expense = monthTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
       return {
