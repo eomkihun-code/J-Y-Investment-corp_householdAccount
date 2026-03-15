@@ -451,10 +451,10 @@ export default function Dashboard() {
             </div>
             
             <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-              {filteredTransactions.filter(t => format(parseISO(t.date), 'yyyy-MM-dd') === selectedDateStr).length === 0 ? (
+              {transactions.filter(t => format(parseISO(t.date), 'yyyy-MM-dd') === selectedDateStr).length === 0 ? (
                 <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>기록된 내역이 없습니다.</div>
               ) : (
-                filteredTransactions
+                transactions
                   .filter(t => format(parseISO(t.date), 'yyyy-MM-dd') === selectedDateStr)
                   .map(tx => (
                     <div key={tx.id} style={{ padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--glass-border)' }}>
@@ -473,7 +473,7 @@ export default function Dashboard() {
         </div>
       )}
       <div style={{ marginTop: '4rem', paddingBottom: '2rem', textAlign: 'center', opacity: 0.3, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-        v1.2.6-stable (Component Isolation Fix)
+        v1.2.7-stable (Data Nav Fix)
       </div>
     </div>
   );
