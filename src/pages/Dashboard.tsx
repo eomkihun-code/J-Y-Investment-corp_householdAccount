@@ -439,8 +439,41 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {selectedDateStr && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div className="glass" style={{ width: '600px', maxWidth: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '600' }}>
+                {format(parseISO(selectedDateStr), 'M월 d일 (E)', { locale: ko })} 내역
+              </h2>
+              <button className="btn btn-ghost" onClick={() => setSelectedDateStr(null)}>닫기</button>
+            </div>
+            
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+              {filteredTransactions.filter(t => format(parseISO(t.date), 'yyyy-MM-dd') === selectedDateStr).length === 0 ? (
+                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>기록된 내역이 없습니다.</div>
+              ) : (
+                filteredTransactions
+                  .filter(t => format(parseISO(t.date), 'yyyy-MM-dd') === selectedDateStr)
+                  .map(tx => (
+                    <div key={tx.id} style={{ padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--glass-border)' }}>
+                      <div>
+                        <p style={{ fontWeight: '600', marginBottom: '4px' }}>{tx.description}</p>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tx.category} • {tx.cardType}</p>
+                      </div>
+                      <p style={{ fontWeight: '700', color: tx.type === 'expense' ? 'var(--danger)' : 'var(--success)' }}>
+                        {tx.type === 'expense' ? '-' : '+'} ₩ {tx.amount.toLocaleString()}
+                      </p>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ marginTop: '4rem', paddingBottom: '2rem', textAlign: 'center', opacity: 0.3, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-        v1.2.4-stable (Trend Fix)
+        v1.2.5-stable (Calendar Fix)
       </div>
     </div>
   );
