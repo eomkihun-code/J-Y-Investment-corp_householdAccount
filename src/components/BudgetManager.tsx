@@ -205,8 +205,7 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
             <Landmark size={24} />
           </div>
           <div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>예상 고정 비용</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>매월 발생하는 고정 지출 항목</p>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>고정비용</h3>
           </div>
         </div>
         
