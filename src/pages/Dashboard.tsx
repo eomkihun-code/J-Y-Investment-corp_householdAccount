@@ -225,6 +225,51 @@ export default function Dashboard() {
     }
   };
 
+  const handleDeleteTransactions = async () => {
+    if (!session) return;
+    try {
+      setIsLoading(true);
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', session.user.id);
+      
+      if (error) throw error;
+      
+      setTransactions([]);
+      setUploadedFiles([]);
+      setShowDeleteModal(false);
+      alert("모든 지출 내역이 삭제되었습니다.");
+    } catch (e) {
+      console.error("Delete transactions failed", e);
+      alert("지출 내역 삭제 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteFixedCosts = async () => {
+    if (!session) return;
+    try {
+      setIsLoading(true);
+      const { error } = await supabase
+        .from('fixed_costs')
+        .delete()
+        .eq('user_id', session.user.id);
+      
+      if (error) throw error;
+      
+      setShowDeleteModal(false);
+      alert("모든 고정비 내역이 삭제되었습니다.");
+      window.location.reload(); 
+    } catch (e) {
+      console.error("Delete fixed costs failed", e);
+      alert("고정비 삭제 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleDeleteAll = async () => {
     if (!session) return;
     
@@ -429,13 +474,22 @@ export default function Dashboard() {
 
       {showDeleteModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div className="glass" style={{ width: '400px', padding: '2rem', textAlign: 'center' }}>
+          <div className="glass" style={{ width: '450px', padding: '2rem', textAlign: 'center' }}>
             <Trash2 size={48} style={{ color: 'var(--danger)', margin: '0 auto 1.5rem' }} />
-            <h2 style={{ marginBottom: '1rem' }}>모든 내역 삭제</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>모든 데이터를 삭제하시겠습니까? 되돌릴 수 없습니다.</p>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowDeleteModal(false)}>취소</button>
-              <button className="btn btn-primary" style={{ flex: 1, background: 'var(--danger)' }} onClick={handleDeleteAll}>삭제하기</button>
+            <h2 style={{ marginBottom: '1rem' }}>데이터 삭제 선택</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>삭제할 데이터의 종류를 선택해주세요. 이 작업은 되돌릴 수 없습니다.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button className="btn btn-ghost" style={{ border: '1px solid var(--danger)', color: 'var(--danger)' }} onClick={handleDeleteTransactions}>
+                지출 내역만 삭제
+              </button>
+              <button className="btn btn-ghost" style={{ border: '1px solid var(--danger)', color: 'var(--danger)' }} onClick={handleDeleteFixedCosts}>
+                고정비 내역만 삭제
+              </button>
+              <button className="btn btn-primary" style={{ background: 'var(--danger)', border: 'none' }} onClick={handleDeleteAll}>
+                모든 데이터 삭제
+              </button>
+              <div style={{ height: '1rem' }} />
+              <button className="btn btn-ghost" style={{ width: '100%' }} onClick={() => setShowDeleteModal(false)}>취소</button>
             </div>
           </div>
         </div>
@@ -474,7 +528,7 @@ export default function Dashboard() {
         </div>
       )}
       <div style={{ marginTop: '4rem', paddingBottom: '2rem', textAlign: 'center', opacity: 0.3, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-        v1.2.8-stable (Analytics Sync)
+        v1.2.9-stable (Fixed Costs Upload & Separate Deletion)
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Landmark, ChevronDown, ChevronUp, CreditCard, Table, Plus, Trash2, X } from 'lucide-react';
+import { Landmark, ChevronDown, ChevronUp, CreditCard, Table, Plus, Trash2, X, FileSpreadsheet } from 'lucide-react';
 import type { Transaction } from '../types/transaction';
 import { supabase } from '../lib/supabaseClient';
+import * as XLSX from 'xlsx';
 
 interface BudgetManagerProps {
   transactions: Transaction[];
@@ -184,6 +185,86 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
       console.error("Delete fixed cost failed", e);
     }
   };
+  
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !session) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const dataBuffer = evt.target?.result as ArrayBuffer;
+        if (!dataBuffer) throw new Error("파일이 비어있습니다.");
+
+        const wb = XLSX.read(dataBuffer, { type: 'array' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+
+        console.log("Parsed Excel rows:", data.length);
+        if (data.length < 2) {
+          alert("데이터가 없거나 형식이 올바르지 않습니다.");
+          return;
+        }
+
+        const headers = (data[0] || []).map(h => String(h || '').trim());
+        console.log("Excel Headers:", headers);
+
+        const categoryIdx = headers.findIndex(h => h.includes('카테고리'));
+        const itemIdx = headers.findIndex(h => h.includes('항목') || h.includes('내역') || h.includes('상세'));
+        const amountIdx = headers.findIndex(h => h.includes('금액'));
+        const noteIdx = headers.findIndex(h => h.includes('비고'));
+        const autoTransferIdx = headers.findIndex(h => h.includes('자동') || h.includes('결제') || h.includes('이체'));
+
+        if (itemIdx === -1 || amountIdx === -1) {
+          alert(`필수 항목을 찾을 수 없습니다.\n찾은 헤더: ${headers.join(', ')}\n(항목/상세/내역 및 금액 필드가 필요합니다)`);
+          return;
+        }
+
+        const newCosts = data.slice(1).map((row, idx) => {
+          if (!row || row.length === 0) return null;
+          
+          const rawAmount = row[amountIdx];
+          const amount = typeof rawAmount === 'number' ? rawAmount : Number(String(rawAmount || 0).replace(/[^0-9.-]/g, ''));
+          const item = row[itemIdx] ? String(row[itemIdx]).trim() : '';
+          
+          if (!item || isNaN(amount)) {
+            console.warn(`Row ${idx + 1} skipped: invalid item or amount`, { item, amount });
+            return null;
+          }
+
+          return {
+            user_id: session.user.id,
+            category: categoryIdx !== -1 ? String(row[categoryIdx] || '기타').trim() : '기타',
+            item: item,
+            amount: amount,
+            note: noteIdx !== -1 ? String(row[noteIdx] || '').trim() : '',
+            auto_transfer: autoTransferIdx !== -1 ? String(row[autoTransferIdx] || '기타').trim() : '기타'
+          };
+        }).filter(Boolean);
+
+        console.log("Maligned new costs:", newCosts);
+        if (newCosts.length === 0) {
+          alert("업로드할 수 있는 유효한 데이터가 없습니다.");
+          return;
+        }
+
+        const { error } = await supabase
+          .from('fixed_costs')
+          .insert(newCosts);
+
+        if (error) throw error;
+        
+        fetchFixedCosts(session.user.id);
+        alert(`${newCosts.length}건의 고정비가 업로드되었습니다.`);
+      } catch (err: any) {
+        console.error("Excel upload failed:", err);
+        alert(`파일 처리 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  };
 
   const getMethodColor = (method: string) => {
     if (method.includes('현대')) return '#f472b6';
@@ -225,6 +306,21 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
             >
               <Plus size={20} />
             </button>
+            <button 
+              className="btn btn-ghost"
+              style={{ padding: '10px', borderRadius: '12px' }}
+              onClick={() => document.getElementById('fixed-cost-excel-input')?.click()}
+              title="엑셀 업로드"
+            >
+              <FileSpreadsheet size={20} />
+            </button>
+            <input 
+              id="fixed-cost-excel-input"
+              type="file" 
+              accept=".xlsx,.xls,.csv" 
+              style={{ display: 'none' }}
+              onChange={handleExcelUpload}
+            />
             <button 
               className={`btn ${showPaymentSummary ? 'btn-primary' : 'btn-ghost'}`}
               style={{ padding: '10px', borderRadius: '12px' }}
