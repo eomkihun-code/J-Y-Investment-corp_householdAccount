@@ -249,4 +249,22 @@ body {
     grid-template-columns: 1fr auto !important; /* Items and Price only on mobile */
     gap: 0.5rem !important;
   }
+
+  .budget-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+
+  .budget-header > div {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .version-tag {
+    opacity: 0.8 !important;
+    font-size: 0.9rem !important;
+    border-top: 1px solid var(--glass-border);
+    padding-top: 2rem;
+  }
 }

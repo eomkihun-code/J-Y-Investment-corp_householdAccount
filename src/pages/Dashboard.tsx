@@ -361,7 +361,7 @@ export default function Dashboard() {
         </button>
       </header>
 
-      <div className="dashboard-main-layout" style={{ display: 'flex', gap: '2rem', flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+      <div className="dashboard-main-layout" style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
         <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           <section>
             <CsvUploadWidget 
@@ -527,7 +527,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-      <div style={{ marginTop: '4rem', paddingBottom: '2rem', textAlign: 'center', opacity: 0.3, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+      <div className="version-tag" style={{ marginTop: '4rem', paddingBottom: '2rem', textAlign: 'center', opacity: 0.6, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
         v1.2.9-stable (Fixed Costs Upload & Separate Deletion)
       </div>
     </div>
