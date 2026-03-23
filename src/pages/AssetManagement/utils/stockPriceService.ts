@@ -116,7 +116,8 @@ export const getValuedHoldings = async (holdings: Holding[]): Promise<HoldingVal
  */
 export async function fetchChartData(ticker: string, range: string = '1y'): Promise<{ timestamp: number[], close: number[] } | null> {
   try {
-    const url = `/yahoo-api/v8/finance/chart/${ticker}?interval=1mo&range=${range}`;
+    const path = `v8/finance/chart/${ticker}?interval=1mo&range=${range}`;
+    const url = `/api/yahoo?path=${encodeURIComponent(path)}`;
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
@@ -270,7 +271,8 @@ export const getMonthlyAssetHistory = async (
  */
 async function fetchYahooPrice(ticker: string): Promise<number | null> {
   try {
-    const url = `/yahoo-api/v8/finance/chart/${ticker}?interval=1m&range=1d`;
+    const path = `v8/finance/chart/${ticker}?interval=1m&range=1d`;
+    const url = `/api/yahoo?path=${encodeURIComponent(path)}`;
     const res = await fetch(url);
     if (!res.ok) {
         if (res.status === 404) return null;
