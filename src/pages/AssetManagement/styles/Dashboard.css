@@ -1,0 +1,40 @@
+.asset-dashboard-scope .dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.asset-dashboard-scope .dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.asset-dashboard-scope .dashboard-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.asset-dashboard-scope .dashboard-header p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Grid Layout for Middle Section */
+.asset-dashboard-scope .middle-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 992px) {
+  .asset-dashboard-scope .middle-section {
+    grid-template-columns: 1fr;
+  }
+}

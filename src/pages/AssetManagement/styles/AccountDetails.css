@@ -1,0 +1,271 @@
+.account-details {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.account-header {
+  margin-bottom: 24px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.tab-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.tab-btn.active {
+  background-color: var(--surface-hover);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* Owner Tabs specific */
+.owner-husband.active {
+  background-color: rgba(77, 171, 247, 0.15);
+  border-color: rgba(77, 171, 247, 0.3);
+  color: var(--husband-color);
+}
+
+.owner-wife.active {
+  background-color: rgba(255, 135, 135, 0.15);
+  border-color: rgba(255, 135, 135, 0.3);
+  color: var(--wife-color);
+}
+
+.account-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.account-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin-bottom: 0 !important;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.group-total-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.group-total-label .total-amount {
+  color: var(--accent-primary);
+  font-weight: 600;
+  font-size: 15px;
+  margin-left: 4px;
+}
+
+.account-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.account-item {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border-left: 3px solid transparent;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.account-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: translateX(4px);
+}
+
+/* Distinct visual colors for Husband vs Wife */
+.account-item.owner-husband {
+  border-left-color: var(--husband-color);
+}
+
+.account-item.owner-wife {
+  border-left-color: var(--wife-color);
+}
+
+.account-item.owner-joint {
+  border-left-color: var(--joint-color);
+}
+
+.account-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.account-category {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.account-name {
+  font-weight: 500;
+}
+
+.account-balance {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.account-item.clickable {
+  cursor: pointer;
+}
+
+.detail-hint {
+  font-size: 10px;
+  vertical-align: middle;
+  margin-left: 4px;
+  opacity: 0.6;
+}
+
+/* Stock Modal Styles */
+.stock-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
+}
+
+.stock-modal-content {
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-body {
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.stock-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.stock-table th, .stock-table td {
+  padding: 14px 20px;
+  text-align: right;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stock-table th:first-child, .stock-table td:first-child {
+  text-align: left;
+}
+
+.stock-table th {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.stock-table tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.text-up {
+  color: #ff5252;
+}
+
+.text-down {
+  color: #4dabf7;
+}
+
+.text-bold {
+  font-weight: 600;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .stock-table th, .stock-table td {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+}

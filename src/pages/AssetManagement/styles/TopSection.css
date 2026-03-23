@@ -1,0 +1,97 @@
+.top-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.total-net-worth-card {
+  text-align: center;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, var(--surface-color) 0%, rgba(187, 134, 252, 0.1) 100%);
+  border: 1px solid rgba(187, 134, 252, 0.2);
+}
+
+.total-net-worth-card h2 {
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.net-worth-value {
+  margin-top: 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+}
+
+.net-worth-value .amount {
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.net-worth-value .percentage {
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(3, 218, 198, 0.1);
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
+.sub-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.sub-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sub-card .icon {
+  font-size: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.sub-card .details {
+  display: flex;
+  flex-direction: column;
+}
+
+.sub-card .label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sub-card .value {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.sub-card .usd-subvalue {
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+@media (max-width: 992px) {
+  .sub-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .sub-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
+import AssetDashboard from './pages/AssetManagement/AssetDashboard'
 import { supabase } from './lib/supabaseClient'
 import './App.css'
 
@@ -43,6 +44,10 @@ function App() {
       <Route 
         path="/dashboard" 
         element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/assets" 
+        element={isAuthenticated ? <AssetDashboard /> : <Navigate to="/auth" replace />} 
       />
       <Route 
         path="*" 

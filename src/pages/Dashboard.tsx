@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   ArrowDownRight, 
   Wallet, 
@@ -355,10 +356,16 @@ export default function Dashboard() {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>환영합니다,</p>
           <h1 style={{ fontSize: '1.75rem', fontWeight: '700' }}>{session?.user?.email?.split('@')[0]} 님</h1>
         </div>
-        <button className="btn btn-ghost" onClick={handleLogout} style={{ padding: '8px 16px' }}>
-          <LogOut size={18} />
-          <span>로그아웃</span>
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <Link to="/assets" className="btn btn-primary" style={{ padding: '8px 16px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Wallet size={18} />
+            <span>자산 관리 대시보드</span>
+          </Link>
+          <button className="btn btn-ghost" onClick={handleLogout} style={{ padding: '8px 16px' }}>
+            <LogOut size={18} />
+            <span>로그아웃</span>
+          </button>
+        </div>
       </header>
 
       <div className="dashboard-main-layout" style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
