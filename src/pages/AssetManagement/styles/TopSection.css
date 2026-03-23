@@ -95,3 +95,17 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 480px) {
+  .net-worth-value .amount {
+    font-size: 32px;
+  }
+  .sub-card .icon {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+  .sub-card .value {
+    font-size: 16px;
+  }
+}

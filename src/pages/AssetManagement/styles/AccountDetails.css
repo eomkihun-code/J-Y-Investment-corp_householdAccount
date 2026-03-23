@@ -11,6 +11,7 @@
 .tabs {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .tab-btn {
@@ -90,8 +91,14 @@
 
 .account-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .account-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .account-item {
@@ -199,9 +206,13 @@
 }
 
 .modal-body {
-  padding: 0;
-  overflow-y: auto;
   flex: 1;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .stock-table {
@@ -267,5 +278,21 @@
   .stock-table th, .stock-table td {
     padding: 10px 12px;
     font-size: 12px;
+  }
+  .stock-modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-header {
+    padding: 16px;
+  }
+  .modal-header h3 {
+    font-size: 15px;
+  }
+  .account-list {
+    grid-template-columns: 1fr;
   }
 }

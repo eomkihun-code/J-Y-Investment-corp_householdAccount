@@ -7,11 +7,26 @@
   gap: 24px;
 }
 
+@media (max-width: 600px) {
+  .asset-dashboard-scope .dashboard-container {
+    padding: 12px;
+    gap: 16px;
+  }
+}
+
 .asset-dashboard-scope .dashboard-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+}
+
+@media (max-width: 600px) {
+  .asset-dashboard-scope .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
 }
 
 .asset-dashboard-scope .dashboard-header h1 {

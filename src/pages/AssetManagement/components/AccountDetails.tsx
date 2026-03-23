@@ -93,40 +93,42 @@ const StockModal = ({ account, onClose }: { account: Account, onClose: () => voi
               )}
             </div>
           ) : (
-            <table className="stock-table">
-              <thead>
-                <tr>
-                  <th>종목</th>
-                  <th>코드</th>
-                  <th>수량</th>
-                  <th>평단가</th>
-                  <th>현재가</th>
-                  <th>평가손익</th>
-                  <th>수익률</th>
-                  <th>평가금액</th>
-                </tr>
-              </thead>
-              <tbody>
-                {valuedHoldings.filter(h => h.quantity > 0).map((h, i) => (
-                  <tr key={i}>
-                    <td>{h.symbol}</td>
-                    <td style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                      {h.code || '-'}
-                    </td>
-                    <td>{h.quantity}</td>
-                    <td>{formatCurrency(h.avgPrice, h.currency)}</td>
-                    <td>{formatCurrency(h.realtimePrice, h.currency)}</td>
-                    <td className={h.gainLoss >= 0 ? 'text-up' : 'text-down'}>
-                      {formatCurrency(h.gainLoss, h.currency)}
-                    </td>
-                    <td className={h.returnRate >= 0 ? 'text-up' : 'text-down'}>
-                      {h.returnRate.toFixed(2)}%
-                    </td>
-                    <td className="text-bold">{formatCurrency(h.valuation, h.currency)}</td>
+            <div className="table-responsive">
+              <table className="stock-table">
+                <thead>
+                  <tr>
+                    <th>종목</th>
+                    <th>코드</th>
+                    <th>수량</th>
+                    <th>평단가</th>
+                    <th>현재가</th>
+                    <th>평가손익</th>
+                    <th>수익률</th>
+                    <th>평가금액</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {valuedHoldings.filter(h => h.quantity > 0).map((h, i) => (
+                    <tr key={i}>
+                      <td>{h.symbol}</td>
+                      <td style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
+                        {h.code || '-'}
+                      </td>
+                      <td>{h.quantity}</td>
+                      <td>{formatCurrency(h.avgPrice, h.currency)}</td>
+                      <td>{formatCurrency(h.realtimePrice, h.currency)}</td>
+                      <td className={h.gainLoss >= 0 ? 'text-up' : 'text-down'}>
+                        {formatCurrency(h.gainLoss, h.currency)}
+                      </td>
+                      <td className={h.returnRate >= 0 ? 'text-up' : 'text-down'}>
+                        {h.returnRate.toFixed(2)}%
+                      </td>
+                      <td className="text-bold">{formatCurrency(h.valuation, h.currency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
