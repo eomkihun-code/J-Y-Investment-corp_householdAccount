@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { Account, CashFlow, Owner, Holding } from '../types';
+import type { Account, CashFlow, Owner } from '../types';
 
 /**
  * Helper to wrap FileReader with a Promise

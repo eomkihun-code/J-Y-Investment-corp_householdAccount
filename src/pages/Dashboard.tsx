@@ -535,7 +535,7 @@ export default function Dashboard() {
         </div>
       )}
       <div className="version-tag" style={{ marginTop: '4rem', paddingBottom: '2rem', textAlign: 'center', opacity: 0.6, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-        v1.2.9-stable (Fixed Costs Upload & Separate Deletion)
+        v1.3.0-stable (Asset Management Integration)
       </div>
     </div>
   );
