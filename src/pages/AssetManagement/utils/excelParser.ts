@@ -147,17 +147,6 @@ export const parseExcelStocks = async (file: File): Promise<Account[]> => {
     return acc;
   });
 
-  // 4. Debug Alert for the user to verify parsing
-  const summary = finalAccounts.flatMap(acc => 
-    (acc.holdings || []).map(h => `${acc.name}: ${h.symbol} = ${h.quantity}개`)
-  ).join('\n');
-  
-  if (summary) {
-    alert(`[업로드 결과 요약]\n${summary}\n\n위 데이터가 대시보드에 반영됩니다.`);
-  } else {
-    alert('업로드된 엑셀 파일에서 유효한 주식 데이터를 찾지 못했습니다.');
-  }
-
   return finalAccounts;
 };
 
