@@ -36,6 +36,22 @@
   margin-bottom: 4px;
 }
 
+.save-indicator {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  display: inline-block;
+  animation: fadeIn 0.3s ease;
+}
+
+.save-indicator.success {
+  border-left: 2px solid var(--positive-color);
+}
+
+.save-indicator.fail {
+  border-left: 2px solid var(--negative-color);
+}
+
 .asset-dashboard-scope .dashboard-header p {
   color: var(--text-secondary);
   font-size: 14px;

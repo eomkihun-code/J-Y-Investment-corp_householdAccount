@@ -52,7 +52,7 @@ export const parseExcelStocks = async (file: File): Promise<Account[]> => {
   const rawData = await readExcelFile(file);
   const accountMap = new Map<string, Account>();
 
-  rawData.forEach((rawRow, index) => {
+  rawData.forEach((rawRow) => {
     const row = trimKeys(rawRow);
     const accountName = String(row['증권 계좌'] || row['계좌'] || '알수없는계좌').trim();
     const ownerRaw = String(row['소유자'] || row['소유주'] || 'Husband').trim();
@@ -82,11 +82,12 @@ export const parseExcelStocks = async (file: File): Promise<Account[]> => {
     const isUSD = market === '해외' || market === '미국' || accountName.includes('미국');
     const currency = isUSD ? 'USD' : 'KRW';
     const accountKey = `${accountName}_${currency}_${mappedOwner}`;
+    const escapedKey = accountKey.replace(/\s+/g, '-');
     
     // 1. Get or create the account base object (without holdings yet)
     if (!accountMap.has(accountKey)) {
       accountMap.set(accountKey, {
-        id: `excel-stock-${Date.now()}-${index}`,
+        id: `excel-stock-${escapedKey}`,
         name: isUSD ? `${accountName} (USD)` : accountName,
         owner: mappedOwner,
         type: 'Stock',
@@ -154,7 +155,7 @@ export const parseExcelStocks = async (file: File): Promise<Account[]> => {
 export const parseExcelCash = async (file: File): Promise<Account[]> => {
   const rawData = await readExcelFile(file);
   
-  const accounts: Account[] = rawData.map((rawRow, index) => {
+  const accounts: Account[] = rawData.map((rawRow) => {
     const row = trimKeys(rawRow);
     const accountName = String(row['현금 현황'] || row['항목'] || '알수없는통장').trim();
     const ownerRaw = String(row['소유주'] || row['소유자'] || 'Husband').trim();
@@ -174,8 +175,10 @@ export const parseExcelCash = async (file: File): Promise<Account[]> => {
     const market = String(row['시장'] || row['구분'] || '국내').trim();
     const isUSD = market.includes('미국') || market.includes('해외') || market.toLowerCase().includes('us') || accountName.includes('미국');
 
+    const escapedKey = accountName.replace(/\s+/g, '-');
+
     return {
-      id: `excel-cash-${Date.now()}-${index}`,
+      id: `excel-cash-${escapedKey}-${mappedOwner}`,
       name: accountName,
       owner: mappedOwner,
       type: 'Bank',

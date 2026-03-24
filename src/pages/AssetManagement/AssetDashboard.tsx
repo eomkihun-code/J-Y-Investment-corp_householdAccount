@@ -18,6 +18,8 @@ import type { Account, CashFlow } from './types';
 function App() {
   const [session, setSession] = useState<any>(null);
   const [isLoadingInitial, setIsLoadingInitial] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
   const [cashAccounts, setCashAccounts] = useState<Account[]>(mockAccounts.filter(a => a.type === 'Bank'));
   const [stockAccounts, setStockAccounts] = useState<Account[]>(mockAccounts.filter(a => a.type === 'Stock'));
@@ -41,13 +43,23 @@ function App() {
     fetchRate();
   }, []);
 
+  const refreshStockValuation = async (stockData: Account[]) => {
+    return await Promise.all(stockData.map(async (acc: Account) => {
+      if (acc.type === 'Stock' && acc.holdings) {
+        const valued = await getValuedHoldings(acc.holdings);
+        const totalValuation = valued.reduce((sum: number, h: any) => sum + h.valuation, 0);
+        return { ...acc, balance: totalValuation };
+      }
+      return acc;
+    }));
+  };
+
   useEffect(() => {
     const initData = async () => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       setSession(currentSession);
       
       if (currentSession?.user) {
-        // Fetch from Supabase
         const { data: assetData, error: _err } = await supabase
           .from('user_asset_data')
           .select('*')
@@ -64,15 +76,7 @@ function App() {
           setIncomeFlows(loadedIncome);
           setManualAccounts(loadedManual);
 
-          // Update Stock account balances with real-time valuations
-          const updatedStockAccounts = await Promise.all(loadedStock.map(async (acc: Account) => {
-            if (acc.type === 'Stock' && acc.holdings) {
-              const valued = await getValuedHoldings(acc.holdings);
-              const totalValuation = valued.reduce((sum: number, h: any) => sum + h.valuation, 0);
-              return { ...acc, balance: totalValuation };
-            }
-            return acc;
-          }));
+          const updatedStockAccounts = await refreshStockValuation(loadedStock);
           setStockAccounts(updatedStockAccounts);
         }
       }
@@ -83,6 +87,8 @@ function App() {
 
   const saveToSupabase = async (cash: Account[], stock: Account[], income: CashFlow[], manual: Account[]) => {
     if (!session?.user?.id) return;
+    setIsSaving(true);
+    setSaveStatus('저장 중...');
     try {
       const { error } = await supabase.from('user_asset_data').upsert({
         user_id: session.user.id,
@@ -92,15 +98,42 @@ function App() {
         manual_accounts: manual,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' });
-      if (error) console.error("Error saving asset data", error);
-    } catch(e) {
+
+      if (error) {
+        console.error("Error saving asset data", error);
+        setSaveStatus('저장 실패 (DB 오류)');
+        alert(`데이터 저장 실패: ${error.message}\nSupabase 테이블 설정(RLS/Primary Key)을 확인해 주세요.`);
+      } else {
+        setSaveStatus('저장 완료');
+        setTimeout(() => setSaveStatus(null), 3000);
+      }
+    } catch(e: any) {
       console.error(e);
+      setSaveStatus('저장 실패');
+      alert(`시스템 오류: ${e.message}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleCashUploaded = (data: Account[]) => { setCashAccounts(data); saveToSupabase(data, stockAccounts, incomeFlows, manualAccounts); };
-  const handleStocksUploaded = (data: Account[]) => { setStockAccounts(data); saveToSupabase(cashAccounts, data, incomeFlows, manualAccounts); };
-  const handleIncomeUploaded = (data: CashFlow[]) => { setIncomeFlows(data); saveToSupabase(cashAccounts, stockAccounts, data, manualAccounts); };
+  const handleCashUploaded = (data: Account[]) => { 
+    setCashAccounts(data); 
+    saveToSupabase(data, stockAccounts, incomeFlows, manualAccounts); 
+  };
+
+  const handleStocksUploaded = async (data: Account[]) => { 
+    // Show current state immediately
+    setStockAccounts(data); 
+    // Re-value stocks for real-time display
+    const valuedData = await refreshStockValuation(data);
+    setStockAccounts(valuedData);
+    saveToSupabase(cashAccounts, valuedData, incomeFlows, manualAccounts); 
+  };
+
+  const handleIncomeUploaded = (data: CashFlow[]) => { 
+    setIncomeFlows(data); 
+    saveToSupabase(cashAccounts, stockAccounts, data, manualAccounts); 
+  };
   
   const handleClearCash = () => { setCashAccounts([]); saveToSupabase([], stockAccounts, incomeFlows, manualAccounts); };
   const handleClearStocks = () => { setStockAccounts([]); saveToSupabase(cashAccounts, [], incomeFlows, manualAccounts); };
@@ -130,6 +163,11 @@ function App() {
         <div>
           <h1>J&Y Family Invest</h1>
           <p>종합 자산관리 대시보드</p>
+          {saveStatus && (
+            <div className={`save-indicator ${saveStatus.includes('실패') ? 'fail' : 'success'}`} style={{ fontSize: '12px', marginTop: '4px', color: saveStatus.includes('실패') ? 'var(--negative-color)' : 'var(--positive-color)' }}>
+              {isSaving ? '⏳ ' : '✅ '}{saveStatus}
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <Link to="/dashboard" style={{ textDecoration: 'none', color: 'var(--text-primary)', padding: '8px 16px', borderRadius: '8px', background: 'var(--surface-color)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}>
