@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Landmark, ChevronDown, ChevronUp, CreditCard, Table, Plus, Trash2, X, FileSpreadsheet } from 'lucide-react';
+import { Landmark, ChevronDown, ChevronUp, CreditCard, Table, Plus, Trash2, X, FileSpreadsheet, Pencil, Check } from 'lucide-react';
 import type { Transaction } from '../types/transaction';
 import { supabase } from '../lib/supabaseClient';
 import * as XLSX from 'xlsx';
@@ -28,6 +28,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const PAYMENT_METHODS = [
   '현대 M카드',
+  '우리카드',
   '코웨이 M카드',
   '경기화폐',
   '우리은행',
@@ -55,6 +56,8 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [showPaymentSummary, setShowPaymentSummary] = useState(false);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCost, setEditCost] = useState<Partial<FixedCost>>({});
 
   // 세션 및 데이터 로드
   useEffect(() => {
@@ -185,6 +188,42 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
       console.error("Delete fixed cost failed", e);
     }
   };
+
+  const handleEditStart = (item: FixedCost, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(item.id);
+    setEditCost(item);
+  };
+
+  const handleEditCancel = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(null);
+    setEditCost({});
+  };
+
+  const handleEditSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!editingId || !editCost.item || !editCost.amount || !session) return;
+    try {
+      const { error } = await supabase
+        .from('fixed_costs')
+        .update({
+          category: editCost.category || '기타',
+          item: editCost.item,
+          amount: editCost.amount,
+          note: editCost.note || '',
+          auto_transfer: editCost.autoTransfer || '기타'
+        })
+        .eq('id', editingId);
+      
+      if (error) throw error;
+      setFixedCosts(prev => prev.map(c => c.id === editingId ? { ...c, ...editCost } as FixedCost : c));
+      setEditingId(null);
+      setEditCost({});
+    } catch (e) {
+      console.error('Update fixed cost failed', e);
+    }
+  };
   
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -270,6 +309,7 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
     if (method.includes('현대')) return '#f472b6';
     if (method.includes('코웨이')) return '#60a5fa';
     if (method.includes('경기')) return '#34d399';
+    if (method.includes('우리')) return '#3b82f6';
     if (method.includes('은행') || method.includes('새마을')) return '#fb923c';
     if (method.includes('현금')) return '#a3a3a3';
     return 'var(--text-muted)';
@@ -387,8 +427,9 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
               {PAYMENT_METHODS.map(method => <option key={method} value={method}>{method}</option>)}
             </select>
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', height: '42px' }}>추가</button>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+            <button type="button" className="btn btn-ghost" style={{ flex: 1, height: '42px', border: '1px solid var(--glass-border)' }} onClick={() => setShowAddForm(false)}>취소</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1, height: '42px' }}>추가</button>
           </div>
         </form>
       )}
@@ -482,31 +523,70 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
               {!isCollapsed && (
                 <div>
                   {items.map((item, idx) => (
+                    editingId === item.id ? (
+                      <div
+                        key={item.id}
+                        className="budget-row"
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'minmax(120px, 1fr) minmax(100px, 1fr) auto auto',
+                          gap: '1rem',
+                          padding: '0.7rem 1.25rem',
+                          alignItems: 'center',
+                          borderBottom: idx < items.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                          fontSize: '0.9rem',
+                          background: 'rgba(255,255,255,0.05)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <input className="input-field" style={{ padding: '4px 8px', fontSize: '0.9rem' }} value={editCost.item || ''} onChange={e => setEditCost({...editCost, item: e.target.value})} placeholder="항목명" />
+                          <input className="input-field" style={{ padding: '4px 8px', fontSize: '0.8rem' }} value={editCost.note || ''} onChange={e => setEditCost({...editCost, note: e.target.value})} placeholder="비고" />
+                        </div>
+                        <div>
+                          <input type="number" className="input-field" style={{ padding: '4px 8px', fontSize: '0.9rem', width: '100px' }} value={editCost.amount || ''} onChange={e => setEditCost({...editCost, amount: parseInt(e.target.value) || 0})} placeholder="금액" />
+                        </div>
+                        <div className="mobile-hide">
+                          <select className="input-field" style={{ padding: '4px 8px', fontSize: '0.8rem' }} value={editCost.autoTransfer || '기타'} onChange={e => setEditCost({...editCost, autoTransfer: e.target.value})}>
+                            {PAYMENT_METHODS.map(method => <option key={method} value={method}>{method}</option>)}
+                          </select>
+                        </div>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button className="btn btn-primary" style={{ padding: '4px' }} onClick={handleEditSave}><Check size={16} /></button>
+                          <button className="btn btn-ghost" style={{ padding: '4px', opacity: 0.6 }} onClick={handleEditCancel}><X size={16} /></button>
+                        </div>
+                      </div>
+                    ) : (
                       <div
                         key={item.id}
                         className="budget-row"
                         style={{
                           display: 'grid',
                           gridTemplateColumns: '1fr auto auto auto',
-                        gap: '1rem',
-                        padding: '0.7rem 1.25rem',
-                        alignItems: 'center',
-                        borderBottom: idx < items.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                        fontSize: '0.9rem'
-                      }}
-                    >
-                      <div>
-                        <p style={{ fontWeight: '500' }}>{item.item}</p>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.note}</p>
+                          gap: '1rem',
+                          padding: '0.7rem 1.25rem',
+                          alignItems: 'center',
+                          borderBottom: idx < items.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        <div>
+                          <p style={{ fontWeight: '500' }}>{item.item}</p>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.note}</p>
+                        </div>
+                        <div style={{ fontWeight: '600' }}>₩ {item.amount.toLocaleString()}</div>
+                        <div className="mobile-hide" style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '6px', background: `${getMethodColor(item.autoTransfer)}22`, color: getMethodColor(item.autoTransfer), border: `1px solid ${getMethodColor(item.autoTransfer)}44` }}>
+                          {item.autoTransfer || '—'}
+                        </div>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button className="btn btn-ghost" style={{ padding: '4px', color: 'var(--primary)', opacity: 0.6 }} onClick={(e) => handleEditStart(item, e)}>
+                            <Pencil size={16} />
+                          </button>
+                          <button className="btn btn-ghost" style={{ padding: '4px', color: 'var(--danger)', opacity: 0.6 }} onClick={(e) => handleDeleteCost(item.id, e)}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
-                      <div style={{ fontWeight: '600' }}>₩ {item.amount.toLocaleString()}</div>
-                      <div className="mobile-hide" style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '6px', background: `${getMethodColor(item.autoTransfer)}22`, color: getMethodColor(item.autoTransfer), border: `1px solid ${getMethodColor(item.autoTransfer)}44` }}>
-                        {item.autoTransfer || '—'}
-                      </div>
-                      <button className="btn btn-ghost" style={{ padding: '4px', color: 'var(--danger)', opacity: 0.6 }} onClick={(e) => handleDeleteCost(item.id, e)}>
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    )
                   ))}
                 </div>
               )}

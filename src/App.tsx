@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
 import AssetDashboard from './pages/AssetManagement/AssetDashboard'
+import InstallPrompt from './components/InstallPrompt'
 import { supabase } from './lib/supabaseClient'
 import './App.css'
 
@@ -36,24 +37,27 @@ function App() {
   const isAuthenticated = !!session
 
   return (
-    <Routes>
-      <Route 
-        path="/auth" 
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Auth />} 
-      />
-      <Route 
-        path="/dashboard" 
-        element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" replace />} 
-      />
-      <Route 
-        path="/assets" 
-        element={isAuthenticated ? <AssetDashboard /> : <Navigate to="/auth" replace />} 
-      />
-      <Route 
-        path="*" 
-        element={<Navigate to={isAuthenticated ? "/dashboard" : "/auth"} replace />} 
-      />
-    </Routes>
+    <>
+      <InstallPrompt />
+      <Routes>
+        <Route
+          path="/auth"
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Auth />}
+        />
+        <Route
+          path="/dashboard"
+          element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" replace />}
+        />
+        <Route
+          path="/assets"
+          element={isAuthenticated ? <AssetDashboard /> : <Navigate to="/auth" replace />}
+        />
+        <Route
+          path="*"
+          element={<Navigate to={isAuthenticated ? "/dashboard" : "/auth"} replace />}
+        />
+      </Routes>
+    </>
   )
 }
 
