@@ -63,11 +63,11 @@ export default defineConfig({
             },
           },
         ],
-        navigateFallback: '/offline.html',
+        navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
       },
       devOptions: {
-        enabled: true,
+        enabled: false,
       },
     }),
   ],
