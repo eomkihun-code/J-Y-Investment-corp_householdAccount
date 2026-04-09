@@ -76,6 +76,12 @@ function App() {
           setIncomeFlows(loadedIncome);
           setManualAccounts(loadedManual);
 
+          // 저장된 현금 데이터에서 최신 월 복원
+          const allDates = loadedCash.flatMap((acc: Account) => Object.keys(acc.history || {})).sort();
+          if (allDates.length > 0) {
+            setTargetMonth(allDates[allDates.length - 1].substring(0, 7));
+          }
+
           const updatedStockAccounts = await refreshStockValuation(loadedStock);
           setStockAccounts(updatedStockAccounts);
         }
@@ -116,9 +122,15 @@ function App() {
     }
   };
 
-  const handleCashUploaded = (data: Account[]) => { 
-    setCashAccounts(data); 
-    saveToSupabase(data, stockAccounts, incomeFlows, manualAccounts); 
+  const handleCashUploaded = (data: Account[]) => {
+    setCashAccounts(data);
+    // 업로드된 데이터에서 최신 월로 targetMonth 자동 업데이트
+    const allDates = data.flatMap(acc => Object.keys(acc.history || {})).sort();
+    if (allDates.length > 0) {
+      const latest = allDates[allDates.length - 1];
+      setTargetMonth(latest.substring(0, 7)); // YYYY-MM
+    }
+    saveToSupabase(data, stockAccounts, incomeFlows, manualAccounts);
   };
 
   const handleStocksUploaded = async (data: Account[]) => { 

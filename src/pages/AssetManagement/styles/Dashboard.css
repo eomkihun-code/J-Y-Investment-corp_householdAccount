@@ -30,26 +30,39 @@
 }
 
 .asset-dashboard-scope .dashboard-header h1 {
+  font-family: 'Manrope', 'Inter', sans-serif;
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
   margin-bottom: 4px;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #dee5ff 0%, #ba9eff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .save-indicator {
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.05);
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-color);
   display: inline-block;
   animation: fadeIn 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 .save-indicator.success {
-  border-left: 2px solid var(--positive-color);
+  border-left: 3px solid var(--positive-color);
+  color: var(--positive-color);
+  background: rgba(22, 163, 74, 0.1);
 }
 
 .save-indicator.fail {
-  border-left: 2px solid var(--negative-color);
+  border-left: 3px solid var(--negative-color);
+  color: var(--negative-color);
+  background: rgba(220, 38, 38, 0.1);
 }
 
 .asset-dashboard-scope .dashboard-header p {

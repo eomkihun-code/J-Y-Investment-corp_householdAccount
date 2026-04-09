@@ -1,25 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Color Palette */
-  --bg-color: #0f172a;          /* slate-900 */
-  --text-main: #f8fafc;         /* slate-50 */
-  --text-muted: #94a3b8;        /* slate-400 */
-  
-  --primary: #6366f1;           /* indigo-500 */
-  --primary-hover: #4f46e5;     /* indigo-600 */
-  
-  --secondary: #a855f7;         /* purple-500 */
-  
-  --success: #10b981;           /* emerald-500 */
-  --danger: #ef4444;            /* red-500 */
-  
-  /* Glassmorphism Variables */
-  --glass-bg: rgba(30, 41, 59, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  
-  /* Transition / Animation */
+  /* ── Dark Navy Theme ── */
+  --color-bg: #060e20;
+  --color-surface: #0f1930;
+  --color-surface-high: #141f38;
+  --color-surface-highest: #192540;
+  --color-border: #40485d;
+  --color-primary: #ba9eff;
+  --color-primary-dim: #8455ef;
+  --color-secondary: #2db7f2;
+  --color-tertiary: #ff6f7e;
+  --color-text: #dee5ff;
+  --color-text-secondary: #a3aac4;
+  --color-positive: #16a34a;
+  --color-negative: #dc2626;
+
+  /* Legacy aliases (keep for backward compat) */
+  --bg-color: var(--color-bg);
+  --text-main: var(--color-text);
+  --text-muted: var(--color-text-secondary);
+  --primary: var(--color-primary);
+  --primary-hover: var(--color-primary-dim);
+  --primary-light: rgba(186, 158, 255, 0.12);
+  --secondary: var(--color-secondary);
+  --success: var(--color-positive);
+  --danger: var(--color-negative);
+  --glass-bg: var(--color-surface);
+  --glass-border: var(--color-border);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  /* Transition */
   --transition-fast: 0.2s ease;
   --transition-normal: 0.3s ease;
 }
@@ -32,36 +43,36 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-main);
+  background-color: var(--color-bg);
+  color: var(--color-text);
   min-height: 100vh;
-  /* Dynamic gradient background */
-  background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.15), transparent 40%),
-              radial-gradient(circle at bottom right, rgba(168, 85, 247, 0.15), transparent 40%),
-              var(--bg-color);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glassmorphism Utility Class */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Manrope', 'Inter', sans-serif;
+}
+
+/* Card Utility */
 .glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   border-radius: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* Modern Inputs */
 .input-field {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid var(--glass-border);
+  background: var(--color-surface-high);
+  border: 1.5px solid var(--color-border);
   border-radius: 8px;
-  color: var(--text-main);
+  color: var(--color-text);
   font-family: inherit;
   font-size: 0.95rem;
   transition: all var(--transition-normal);
@@ -69,12 +80,12 @@ body {
 }
 
 .input-field:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(186, 158, 255, 0.15);
 }
 
 .input-field::placeholder {
-  color: var(--text-muted);
+  color: var(--color-text-secondary);
 }
 
 /* Buttons */
@@ -94,14 +105,15 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: linear-gradient(135deg, #ba9eff, #8455ef);
   color: white;
-  box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+  box-shadow: 0 4px 16px rgba(132, 85, 239, 0.35);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(132, 85, 239, 0.45);
 }
 
 .btn-primary:active {
@@ -110,13 +122,14 @@ body {
 
 .btn-ghost {
   background: transparent;
-  color: var(--text-muted);
-  border: 1px solid transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
 }
 
 .btn-ghost:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
+  background: var(--color-surface-high);
+  border-color: var(--color-primary);
 }
 
 /* Custom React Calendar for Dark Theme */
@@ -125,10 +138,10 @@ body {
   background: transparent;
   border: none;
   font-family: inherit;
-  color: var(--text-main);
+  color: var(--color-text);
 }
 .custom-calendar-wrapper .react-calendar__navigation button {
-  color: var(--text-main);
+  color: var(--color-text);
   min-width: 44px;
   background: none;
   font-size: 1.1rem;
@@ -138,13 +151,13 @@ body {
 }
 .custom-calendar-wrapper .react-calendar__navigation button:enabled:hover,
 .custom-calendar-wrapper .react-calendar__navigation button:enabled:focus {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-surface-high);
 }
 .custom-calendar-wrapper .react-calendar__month-view__weekdays {
   text-transform: uppercase;
   font-weight: 600;
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--color-text-secondary);
 }
 .custom-calendar-wrapper .react-calendar__month-view__weekdays abbr {
   text-decoration: none;
@@ -155,29 +168,30 @@ body {
   text-align: center;
   line-height: 1.2;
   border-radius: 8px;
-  color: var(--text-main);
+  color: var(--color-text);
   transition: all var(--transition-fast);
 }
 .custom-calendar-wrapper .react-calendar__tile:enabled:hover,
 .custom-calendar-wrapper .react-calendar__tile:enabled:focus {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-surface-high);
 }
 .custom-calendar-wrapper .react-calendar__tile--now {
-  background: rgba(99, 102, 241, 0.15) !important;
-  color: var(--primary);
+  background: rgba(186, 158, 255, 0.15) !important;
+  color: var(--color-primary);
   font-weight: bold;
 }
 .custom-calendar-wrapper .react-calendar__tile--active {
-  background: var(--primary) !important;
+  background: var(--color-primary-dim) !important;
   color: white !important;
 }
 .custom-calendar-wrapper .react-calendar__month-view__days__day--weekend {
-  color: #fca5a5;
+  color: var(--color-tertiary);
 }
 .custom-calendar-wrapper .react-calendar__month-view__days__day--neighboringMonth {
-  color: var(--text-muted);
-  opacity: 0.4;
+  color: var(--color-text-secondary);
+  opacity: 0.5;
 }
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   :root {
@@ -189,7 +203,7 @@ body {
   }
 
   .glass {
-    padding: 1.25rem !important; /* Force smaller padding on mobile */
+    padding: 1.25rem !important;
     border-radius: 12px;
   }
 
@@ -198,7 +212,6 @@ body {
     font-size: 0.9rem;
   }
 
-  /* Dashboard responsive adjustments */
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start !important;
@@ -215,19 +228,16 @@ body {
     grid-template-columns: 1fr !important;
   }
 
-  /* Full screen sidebar for mobile */
   .mobile-full-sidebar {
     width: 100% !important;
     max-width: none !important;
     height: 100% !important;
   }
 
-  /* Responsive font sizes */
   h1 { font-size: 1.5rem !important; }
   h2 { font-size: 1.25rem !important; }
   h3 { font-size: 1.1rem !important; }
 
-  /* Responsive grids and lists */
   .mobile-stack {
     grid-template-columns: 1fr !important;
   }
@@ -244,9 +254,8 @@ body {
     gap: 0.5rem !important;
   }
 
-  /* BudgetManager specific */
   .budget-row {
-    grid-template-columns: 1fr auto !important; /* Items and Price only on mobile */
+    grid-template-columns: 1fr auto !important;
     gap: 0.5rem !important;
   }
 
@@ -264,7 +273,7 @@ body {
   .version-tag {
     opacity: 0.8 !important;
     font-size: 0.9rem !important;
-    border-top: 1px solid var(--glass-border);
+    border-top: 1px solid var(--color-border);
     padding-top: 2rem;
   }
 }

@@ -163,14 +163,25 @@ export const parseExcelCash = async (file: File): Promise<Account[]> => {
     const mappedOwner: Owner = ownerRaw.includes('최수진') || ownerRaw.toLowerCase().includes('wife') ? 'Wife' : 
                                ownerRaw.includes('엄기훈') || ownerRaw.toLowerCase().includes('husband') ? 'Husband' : 'Joint';
     
-    // Find all date columns (e.g., 2026-03-17) and build history
-    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-    const dateKeys = Object.keys(row).filter(k => datePattern.test(k)).sort();
-    
+    // Find all date columns and normalize to YYYY-MM-DD
+    // Handles: 'YYYY-MM-DD', 'YYYY-MM', 'M/D/YY' formats
+    const normalizeDate = (key: string): string | null => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(key)) return key;
+      if (/^\d{4}-\d{2}$/.test(key)) return `${key}-01`;
+      const mdyy = key.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+      if (mdyy) {
+        const [, m, d, yy] = mdyy;
+        return `20${yy}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+      }
+      return null;
+    };
+
     const history: { [date: string]: number } = {};
-    dateKeys.forEach(k => {
-      history[k] = parseAmount(row[k]);
+    Object.keys(row).forEach(k => {
+      const normalized = normalizeDate(k);
+      if (normalized) history[normalized] = parseAmount(row[k]);
     });
+    const dateKeys = Object.keys(history).sort();
     
     const latestBalance = dateKeys.length > 0 ? history[dateKeys[dateKeys.length - 1]] : 0;
     const market = String(row['시장'] || row['구분'] || '국내').trim();

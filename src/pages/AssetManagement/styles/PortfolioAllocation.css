@@ -5,10 +5,13 @@
 }
 
 .portfolio-title {
-  font-size: 14px;
+  font-size: 13px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   margin-bottom: 24px;
+  color: var(--text-secondary);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
 }
 
 .portfolio-content {
@@ -44,18 +47,19 @@
 .donut-hole {
   width: 140px;
   height: 140px;
-  background-color: var(--surface-color);
+  background: var(--surface-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
 .hole-text {
   color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: 1px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.5px;
 }
 
 .legend-container {
@@ -73,8 +77,8 @@
 }
 
 .legend-item .dot {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
@@ -87,6 +91,7 @@
 
 .legend-value {
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 @media (max-width: 576px) {
@@ -95,26 +100,20 @@
   }
 }
 
-/* --- NEW: Asset Status Bar Chart Styles --- */
+/* Asset Status Bar Chart Styles */
 .cash-trend-section {
   margin-top: 32px;
   padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-color);
 }
 
-/* --- Stacked Bar Chart Styles --- */
+/* Stacked Bar Chart Styles */
 .chart-legend {
   display: inline-flex;
   gap: 12px;
   margin-left: 12px;
   font-weight: normal;
   font-size: 11px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .legend-color {
@@ -157,7 +156,7 @@
 
 .total-val {
   font-size: 10px;
-  color: #fff;
+  color: var(--text-secondary);
   font-weight: 700;
   margin-bottom: 4px;
 }
@@ -195,14 +194,14 @@
 
 .portfolio-bar-wrapper:hover .portfolio-bar-segment {
   opacity: 1;
-  filter: brightness(1.1);
+  filter: brightness(1.15);
 }
 
 .segment-label {
   font-size: 9px;
-  font-weight: 600;
+  font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .portfolio-bar-label {
@@ -225,8 +224,8 @@
 .loading-spinner-small {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top-color: var(--accent-secondary);
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 40px auto;

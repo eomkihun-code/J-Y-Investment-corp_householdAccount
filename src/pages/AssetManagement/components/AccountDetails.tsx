@@ -136,6 +136,25 @@ const StockModal = ({ account, onClose }: { account: Account, onClose: () => voi
   );
 };
 
+// 계좌명에서 금융기관명 추출
+const getInstitutionKey = (name: string): string => {
+  const cleaned = name.replace(/^(국내|미국|해외)\s*/i, '').trim();
+  const institutions: [string, string][] = [
+    ['KB증권', 'KB증권'], ['키움증권', '키움증권'], ['미래에셋', '미래에셋'], ['삼성증권', '삼성증권'],
+    ['한국투자', '한국투자'], ['NH투자', 'NH투자'], ['대신증권', '대신증권'], ['교보증권', '교보증권'],
+    ['신한투자', '신한투자'], ['하나증권', '하나증권'],
+    ['국민은행', 'KB국민은행'], ['KB은행', 'KB국민은행'], ['신한은행', '신한은행'], ['하나은행', '하나은행'],
+    ['우리은행', '우리은행'], ['농협', '농협'], ['기업은행', '기업은행'], ['새마을금고', '새마을금고'],
+    ['우체국', '우체국'], ['카카오뱅크', '카카오뱅크'], ['토스뱅크', '토스뱅크'],
+    ['업비트', '업비트'], ['빗썸', '빗썸'], ['코인원', '코인원'],
+    ['키움', '키움'], ['KB', 'KB'], ['하나', '하나'], ['신한', '신한'],
+  ];
+  for (const [keyword, label] of institutions) {
+    if (cleaned.includes(keyword)) return label;
+  }
+  return cleaned.split(/[\s_]/)[0] || name;
+};
+
 export default function AccountDetails({ accounts, exchangeRate }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>('All');
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
@@ -167,13 +186,42 @@ export default function AccountDetails({ accounts, exchangeRate }: Props) {
     }
   };
 
+  const renderAccountItem = (acc: Account) => (
+    <div
+      className={`account-item ${getOwnerClass(acc.owner)} ${acc.type === 'Stock' ? 'clickable' : ''}`}
+      key={acc.id}
+      onClick={() => acc.type === 'Stock' && setSelectedAccount(acc)}
+    >
+      <div className="account-info">
+        <span className="account-category">{acc.category}</span>
+        <span className="account-name">{acc.name} {acc.type === 'Stock' && <span className="detail-hint">🔍</span>}</span>
+      </div>
+      <div className="account-balance">
+        {formatAccountBalance(acc.balance, acc.currency)}
+        {acc.currency === 'USD' && (
+          <div className="krw-eq" style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            ({new Intl.NumberFormat('ko-KR').format(Math.round(acc.balance * exchangeRate))}원)
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   const renderAccountGroup = (title: string, data: Account[], icon: string) => {
     if (data.length === 0) return null;
 
-    const totalKRW = data.reduce((acc, curr) => {
-      const amountInKRW = curr.currency === 'USD' ? curr.balance * exchangeRate : curr.balance;
-      return acc + amountInKRW;
+    const totalKRW = data.reduce((sum, curr) => {
+      return sum + (curr.currency === 'USD' ? curr.balance * exchangeRate : curr.balance);
     }, 0);
+    const totalUSD = data.filter(a => a.currency === 'USD').reduce((sum, a) => sum + a.balance, 0);
+
+    // 기관별 그룹핑
+    const institutionMap = new Map<string, Account[]>();
+    data.forEach(acc => {
+      const key = getInstitutionKey(acc.name);
+      if (!institutionMap.has(key)) institutionMap.set(key, []);
+      institutionMap.get(key)!.push(acc);
+    });
 
     return (
       <div className="account-group">
@@ -183,29 +231,32 @@ export default function AccountDetails({ accounts, exchangeRate }: Props) {
           </h4>
           <span className="group-total-label">
             합계: <span className="total-amount">{new Intl.NumberFormat('ko-KR').format(Math.round(totalKRW))}원</span>
+            {totalUSD > 0 && (
+              <span style={{ marginLeft: '10px', color: 'var(--color-secondary, #2db7f2)', fontWeight: 600 }}>
+                ({new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalUSD)})
+              </span>
+            )}
           </span>
         </div>
-        <div className="account-list">
-          {data.map(acc => (
-            <div 
-              className={`account-item ${getOwnerClass(acc.owner)} ${acc.type === 'Stock' ? 'clickable' : ''}`} 
-              key={acc.id}
-              onClick={() => acc.type === 'Stock' && setSelectedAccount(acc)}
-            >
-              <div className="account-info">
-                <span className="account-category">{acc.category}</span>
-                <span className="account-name">{acc.name} {acc.type === 'Stock' && <span className="detail-hint">🔍</span>}</span>
+
+        <div className="institution-groups">
+          {Array.from(institutionMap.entries()).map(([instName, instAccounts]) => {
+            const instTotal = instAccounts.reduce((sum, acc) =>
+              sum + (acc.currency === 'USD' ? acc.balance * exchangeRate : acc.balance), 0);
+            return (
+              <div key={instName} className="institution-group">
+                <div className="institution-header">
+                  <span className="institution-name">{instName}</span>
+                  <span className="institution-total">
+                    {new Intl.NumberFormat('ko-KR').format(Math.round(instTotal))}원
+                  </span>
+                </div>
+                <div className="account-list">
+                  {instAccounts.map(renderAccountItem)}
+                </div>
               </div>
-              <div className="account-balance">
-                {formatAccountBalance(acc.balance, acc.currency)}
-                {acc.currency === 'USD' && (
-                  <div className="krw-eq" style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                    ({new Intl.NumberFormat('ko-KR').format(Math.round(acc.balance * exchangeRate))}원)
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -217,15 +268,15 @@ export default function AccountDetails({ accounts, exchangeRate }: Props) {
       <div className="flex-between account-header">
         <h3 className="text-secondary portfolio-title" style={{ marginBottom: 0 }}>계좌별 상세 현황</h3>
         <div className="tabs">
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'All' ? 'active' : ''}`}
             onClick={() => setActiveTab('All')}
           >전체</button>
-          <button 
+          <button
             className={`tab-btn owner-husband ${activeTab === 'Husband' ? 'active' : ''}`}
             onClick={() => setActiveTab('Husband')}
           >엄기훈</button>
-          <button 
+          <button
             className={`tab-btn owner-wife ${activeTab === 'Wife' ? 'active' : ''}`}
             onClick={() => setActiveTab('Wife')}
           >최수진</button>
@@ -239,9 +290,9 @@ export default function AccountDetails({ accounts, exchangeRate }: Props) {
       </div>
 
       {selectedAccount && (
-        <StockModal 
-          account={selectedAccount} 
-          onClose={() => setSelectedAccount(null)} 
+        <StockModal
+          account={selectedAccount}
+          onClose={() => setSelectedAccount(null)}
         />
       )}
     </div>

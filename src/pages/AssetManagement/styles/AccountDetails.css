@@ -10,40 +10,45 @@
 
 .tabs {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .tab-btn {
   padding: 6px 16px;
   border-radius: 20px;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--surface-active);
   font-size: 13px;
   font-weight: 500;
+  color: var(--text-secondary);
   transition: all 0.2s ease;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-color);
 }
 
 .tab-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+  border-color: rgba(186, 158, 255, 0.3);
 }
 
 .tab-btn.active {
-  background-color: var(--surface-hover);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background-color: rgba(186, 158, 255, 0.12);
+  border-color: rgba(186, 158, 255, 0.4);
+  color: var(--accent-primary);
+  box-shadow: 0 0 0 1px rgba(186, 158, 255, 0.15) inset;
+  font-weight: 600;
 }
 
 /* Owner Tabs specific */
 .owner-husband.active {
-  background-color: rgba(77, 171, 247, 0.15);
-  border-color: rgba(77, 171, 247, 0.3);
+  background-color: rgba(45, 183, 242, 0.12);
+  border-color: rgba(45, 183, 242, 0.4);
   color: var(--husband-color);
 }
 
 .owner-wife.active {
-  background-color: rgba(255, 135, 135, 0.15);
-  border-color: rgba(255, 135, 135, 0.3);
+  background-color: rgba(255, 111, 126, 0.12);
+  border-color: rgba(255, 111, 126, 0.4);
   color: var(--wife-color);
 }
 
@@ -51,6 +56,42 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* 기관별 그룹 */
+.institution-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.institution-group {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.institution-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(64, 72, 93, 0.5);
+}
+
+.institution-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  letter-spacing: 0.3px;
+}
+
+.institution-total {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .account-group {
@@ -84,7 +125,7 @@
 
 .group-total-label .total-amount {
   color: var(--accent-primary);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 15px;
   margin-left: 4px;
 }
@@ -92,7 +133,7 @@
 .account-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 @media (max-width: 600px) {
@@ -104,16 +145,21 @@
 .account-item {
   display: flex;
   flex-direction: column;
-  padding: 16px;
-  background-color: rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
+  padding: 14px 16px;
+  background-color: var(--surface-active);
+  border-radius: 10px;
   border-left: 3px solid transparent;
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  border: 1px solid var(--border-color);
+  border-left-width: 3px;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .account-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  transform: translateX(4px);
+  background-color: var(--surface-hover);
+  transform: translateX(2px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(186, 158, 255, 0.2);
+  border-left-width: 3px;
 }
 
 /* Distinct visual colors for Husband vs Wife */
@@ -137,19 +183,24 @@
 }
 
 .account-category {
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 2px 6px;
+  color: var(--text-muted);
+  background: rgba(64, 72, 93, 0.5);
+  border: 1px solid var(--border-color);
+  padding: 2px 8px;
   border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .account-name {
   font-weight: 500;
+  color: var(--text-primary);
 }
 
 .account-balance {
   font-size: 18px;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .account-item.clickable {
@@ -170,8 +221,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(6, 14, 32, 0.75);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -180,15 +232,15 @@
 }
 
 .stock-modal-content {
-  background: var(--surface-bg);
+  background: var(--surface-color);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 20px;
   width: 90%;
   max-width: 800px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 4px 16px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 
@@ -198,15 +250,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: var(--surface-hover);
 }
 
 .modal-header h3 {
   margin: 0;
   font-size: 18px;
+  color: var(--text-primary);
+  font-family: 'Manrope', 'Inter', sans-serif;
 }
 
 .modal-body {
   flex: 1;
+  overflow-y: auto;
 }
 
 .table-responsive {
@@ -222,9 +278,10 @@
 }
 
 .stock-table th, .stock-table td {
-  padding: 14px 20px;
+  padding: 13px 20px;
   text-align: right;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 .stock-table th:first-child, .stock-table td:first-child {
@@ -232,27 +289,27 @@
 }
 
 .stock-table th {
-  background: rgba(255, 255, 255, 0.02);
-  color: var(--text-secondary);
-  font-weight: 500;
-  font-size: 12px;
+  background: var(--surface-highest, #192540);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
-.stock-table tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+.stock-table tr:hover td {
+  background: var(--surface-hover);
 }
 
 .text-up {
-  color: #ff5252;
+  color: #dc2626;
 }
 
 .text-down {
-  color: #4dabf7;
+  color: #2db7f2;
 }
 
 .text-bold {

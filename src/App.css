@@ -1,1 +1,5 @@
-/* Specific layout styles for App if needed */
+/* App-level layout styles */
+#root {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+}
