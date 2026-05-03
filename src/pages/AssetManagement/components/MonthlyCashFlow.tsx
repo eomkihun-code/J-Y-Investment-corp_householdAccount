@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import '../styles/MonthlyCashFlow.css';
 import type { CashFlow, MonthlyTrend, Owner } from '../types';
+import { INCOME_ITEM_LOOKUP, INCOME_MARKETS, findIncomeItem, type IncomeMarket } from '../data/incomeLookup';
 
 interface Props {
   cashFlows: CashFlow[];
@@ -16,12 +17,13 @@ type CategoryFilter = 'Interest' | 'Dividend' | 'Rent' | 'Other';
 
 interface FormState {
   date: string;
-  source: string;
+  itemName: string;
+  isCustomItem: boolean;
   amount: string;
   currency: 'KRW' | 'USD';
   category: CategoryFilter;
   owner: Owner;
-  market: string;
+  market: IncomeMarket;
 }
 
 const todayYMD = () => {
@@ -29,17 +31,20 @@ const todayYMD = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-const initialForm = (targetMonth: string): FormState => ({
-  date: `${targetMonth}-${String(new Date().getDate()).padStart(2, '0')}`.length === 10
-    ? `${targetMonth}-${String(new Date().getDate()).padStart(2, '0')}`
-    : todayYMD(),
-  source: '',
-  amount: '',
-  currency: 'KRW',
-  category: 'Dividend',
-  owner: 'Husband',
-  market: '',
-});
+const initialForm = (targetMonth: string): FormState => {
+  const day = String(new Date().getDate()).padStart(2, '0');
+  const candidate = `${targetMonth}-${day}`;
+  return {
+    date: candidate.length === 10 ? candidate : todayYMD(),
+    itemName: '',
+    isCustomItem: false,
+    amount: '',
+    currency: 'KRW',
+    category: 'Dividend',
+    owner: 'Husband',
+    market: '국내',
+  };
+};
 
 const generateId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -198,22 +203,43 @@ export default function MonthlyCashFlow({ cashFlows, exchangeRate, targetMonth, 
     setForm(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleItemSelect = (value: string) => {
+    if (value === '__custom__') {
+      setForm(prev => ({ ...prev, itemName: '', isCustomItem: true }));
+      return;
+    }
+    const lookup = findIncomeItem(value);
+    if (lookup) {
+      setForm(prev => ({
+        ...prev,
+        itemName: lookup.name,
+        isCustomItem: false,
+        market: lookup.market,
+        category: lookup.category,
+        currency: lookup.currency,
+      }));
+    } else {
+      setForm(prev => ({ ...prev, itemName: value, isCustomItem: false }));
+    }
+  };
+
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const amountNum = parseFloat(form.amount);
-    if (!form.date || !form.source.trim() || isNaN(amountNum) || amountNum <= 0) {
-      setFormError('날짜, 출처, 0보다 큰 금액은 필수입니다.');
+    const itemName = form.itemName.trim();
+    if (!form.date || !itemName || isNaN(amountNum) || amountNum <= 0) {
+      setFormError('날짜, 항목, 0보다 큰 금액은 필수입니다.');
       return;
     }
     const newFlow: CashFlow = {
       id: generateId(),
       date: form.date,
-      source: form.source.trim(),
+      source: itemName,
       amount: amountNum,
       currency: form.currency,
       category: form.category,
       owner: form.owner,
-      market: form.market.trim() || (form.currency === 'USD' ? 'USD Market' : '국내'),
+      market: form.market,
     };
     onCashFlowsChange([...cashFlows, newFlow]);
     closeModal();
@@ -424,14 +450,39 @@ export default function MonthlyCashFlow({ cashFlows, exchangeRate, targetMonth, 
                   />
                 </label>
                 <label>
-                  <span>출처</span>
-                  <input
-                    type="text"
-                    value={form.source}
-                    onChange={(e) => handleFormChange('source', e.target.value)}
-                    placeholder="예: 삼성전자 배당, 월세"
-                    required
-                  />
+                  <span>항목</span>
+                  {form.isCustomItem ? (
+                    <div className="item-input-wrap">
+                      <input
+                        type="text"
+                        value={form.itemName}
+                        onChange={(e) => handleFormChange('itemName', e.target.value)}
+                        placeholder="새 항목 이름 입력"
+                        autoFocus
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="item-back-btn"
+                        onClick={() => setForm(prev => ({ ...prev, itemName: '', isCustomItem: false }))}
+                        title="목록에서 선택"
+                      >
+                        ↺
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      value={form.itemName}
+                      onChange={(e) => handleItemSelect(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled>— 선택 —</option>
+                      {INCOME_ITEM_LOOKUP.map(item => (
+                        <option key={item.name} value={item.name}>{item.name}</option>
+                      ))}
+                      <option value="__custom__">＋ 직접 입력…</option>
+                    </select>
+                  )}
                 </label>
               </div>
               <div className="form-row">
@@ -486,13 +537,15 @@ export default function MonthlyCashFlow({ cashFlows, exchangeRate, targetMonth, 
               </div>
               <div className="form-row">
                 <label className="form-row-full">
-                  <span>시장 (선택)</span>
-                  <input
-                    type="text"
+                  <span>시장</span>
+                  <select
                     value={form.market}
-                    onChange={(e) => handleFormChange('market', e.target.value)}
-                    placeholder="예: KOSPI, NYSE, 국내은행"
-                  />
+                    onChange={(e) => handleFormChange('market', e.target.value as IncomeMarket)}
+                  >
+                    {INCOME_MARKETS.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
                 </label>
               </div>
 

@@ -570,6 +570,31 @@
   box-shadow: 0 0 0 3px rgba(186, 158, 255, 0.15);
 }
 
+.item-input-wrap {
+  display: flex;
+  gap: 6px;
+}
+
+.item-input-wrap input {
+  flex: 1;
+}
+
+.item-back-btn {
+  background: var(--surface-active);
+  border: 1.5px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 0 12px;
+  border-radius: 7px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.item-back-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
 .form-error {
   background: rgba(220, 38, 38, 0.1);
   border: 1px solid rgba(220, 38, 38, 0.3);
