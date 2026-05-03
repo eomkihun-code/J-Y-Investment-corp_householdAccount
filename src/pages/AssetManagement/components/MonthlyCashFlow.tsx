@@ -1,22 +1,59 @@
 import { useState } from 'react';
+import { Plus, Trash2, X } from 'lucide-react';
 import '../styles/MonthlyCashFlow.css';
-import type { CashFlow, MonthlyTrend } from '../types';
+import type { CashFlow, MonthlyTrend, Owner } from '../types';
 
 interface Props {
   cashFlows: CashFlow[];
   exchangeRate: number;
   targetMonth: string;
   onMonthChange: (month: string) => void;
+  onCashFlowsChange: (flows: CashFlow[]) => void;
 }
 
 type TimelinePeriod = '3' | '6' | '12' | 'thisYear' | 'lastYear';
 type CategoryFilter = 'Interest' | 'Dividend' | 'Rent' | 'Other';
 
-export default function MonthlyCashFlow({ cashFlows, exchangeRate, targetMonth, onMonthChange }: Props) {
+interface FormState {
+  date: string;
+  source: string;
+  amount: string;
+  currency: 'KRW' | 'USD';
+  category: CategoryFilter;
+  owner: Owner;
+  market: string;
+}
+
+const todayYMD = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const initialForm = (targetMonth: string): FormState => ({
+  date: `${targetMonth}-${String(new Date().getDate()).padStart(2, '0')}`.length === 10
+    ? `${targetMonth}-${String(new Date().getDate()).padStart(2, '0')}`
+    : todayYMD(),
+  source: '',
+  amount: '',
+  currency: 'KRW',
+  category: 'Dividend',
+  owner: 'Husband',
+  market: '',
+});
+
+const generateId = () =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `cf-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+export default function MonthlyCashFlow({ cashFlows, exchangeRate, targetMonth, onMonthChange, onCashFlowsChange }: Props) {
   const [timeline, setTimeline] = useState<TimelinePeriod>('6');
   const [activeCategories, setActiveCategories] = useState<CategoryFilter[]>(['Interest', 'Dividend', 'Rent', 'Other']);
   const [activeOwners, setActiveOwners] = useState<string[]>(['Husband', 'Wife', 'Joint']);
   const [selectedBarMonth, setSelectedBarMonth] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState<FormState>(initialForm(targetMonth));
+  const [formError, setFormError] = useState<string | null>(null);
 
   // 1. Filter and Group by month
   const monthlyTotals: Record<string, number> = {};
@@ -146,13 +183,54 @@ export default function MonthlyCashFlow({ cashFlows, exchangeRate, targetMonth, 
     return `${t}개월`;
   }
 
+  const openAddModal = () => {
+    setForm(initialForm(targetMonth));
+    setFormError(null);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setFormError(null);
+  };
+
+  const handleFormChange = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amountNum = parseFloat(form.amount);
+    if (!form.date || !form.source.trim() || isNaN(amountNum) || amountNum <= 0) {
+      setFormError('날짜, 출처, 0보다 큰 금액은 필수입니다.');
+      return;
+    }
+    const newFlow: CashFlow = {
+      id: generateId(),
+      date: form.date,
+      source: form.source.trim(),
+      amount: amountNum,
+      currency: form.currency,
+      category: form.category,
+      owner: form.owner,
+      market: form.market.trim() || (form.currency === 'USD' ? 'USD Market' : '국내'),
+    };
+    onCashFlowsChange([...cashFlows, newFlow]);
+    closeModal();
+  };
+
+  const handleDelete = (id: string) => {
+    if (!window.confirm('이 인컴 이력을 삭제하시겠어요?')) return;
+    onCashFlowsChange(cashFlows.filter(cf => cf.id !== id));
+  };
+
   return (
     <div className="card cash-flow-card notranslate">
       <div className="cash-flow-header">
         <div className="flex-between">
           <h3 className="text-secondary">{targetMonth.split('-')[0]}년 {parseInt(targetMonth.split('-')[1])}월 패시브 인컴</h3>
           <div className="header-controls">
-            <select 
+            <select
               className="month-selector"
               value={targetMonth}
               onChange={(e) => onMonthChange(e.target.value)}
@@ -161,6 +239,15 @@ export default function MonthlyCashFlow({ cashFlows, exchangeRate, targetMonth, 
                 <option key={m} value={m}>{m.replace('-', '년 ')}월</option>
               ))}
             </select>
+            <button
+              type="button"
+              className="add-income-btn"
+              onClick={openAddModal}
+              title="인컴 이력 추가"
+            >
+              <Plus size={14} />
+              <span>추가</span>
+            </button>
           </div>
         </div>
         
@@ -293,10 +380,20 @@ export default function MonthlyCashFlow({ cashFlows, exchangeRate, targetMonth, 
               <div key={cf.id} className="income-item">
                 <div className="income-info">
                   <span className="income-source">{cf.source}</span>
-                  <span className="income-market">{cf.market}</span>
+                  <span className="income-market">{cf.market} · {cf.date}</span>
                 </div>
-                <div className={`income-amount ${cf.currency}`}>
-                  {formatCurrency(cf.amount, cf.currency)}
+                <div className="income-right">
+                  <div className={`income-amount ${cf.currency}`}>
+                    {formatCurrency(cf.amount, cf.currency)}
+                  </div>
+                  <button
+                    type="button"
+                    className="income-delete-btn"
+                    onClick={() => handleDelete(cf.id)}
+                    title="삭제"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
             ))}
@@ -305,6 +402,110 @@ export default function MonthlyCashFlow({ cashFlows, exchangeRate, targetMonth, 
           <div className="empty-state">데이터가 없습니다.</div>
         )}
       </div>
+
+      {isModalOpen && (
+        <div className="income-modal-overlay" onClick={closeModal}>
+          <div className="income-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="income-modal-header">
+              <h3>인컴 이력 추가</h3>
+              <button type="button" className="close-btn" onClick={closeModal} title="닫기">
+                <X size={16} />
+              </button>
+            </div>
+            <form className="income-form" onSubmit={handleAddSubmit}>
+              <div className="form-row">
+                <label>
+                  <span>날짜</span>
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => handleFormChange('date', e.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  <span>출처</span>
+                  <input
+                    type="text"
+                    value={form.source}
+                    onChange={(e) => handleFormChange('source', e.target.value)}
+                    placeholder="예: 삼성전자 배당, 월세"
+                    required
+                  />
+                </label>
+              </div>
+              <div className="form-row">
+                <label>
+                  <span>금액</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={form.amount}
+                    onChange={(e) => handleFormChange('amount', e.target.value)}
+                    placeholder="숫자만 입력"
+                    required
+                  />
+                </label>
+                <label>
+                  <span>통화</span>
+                  <select
+                    value={form.currency}
+                    onChange={(e) => handleFormChange('currency', e.target.value as 'KRW' | 'USD')}
+                  >
+                    <option value="KRW">KRW</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </label>
+              </div>
+              <div className="form-row">
+                <label>
+                  <span>카테고리</span>
+                  <select
+                    value={form.category}
+                    onChange={(e) => handleFormChange('category', e.target.value as CategoryFilter)}
+                  >
+                    <option value="Dividend">배당</option>
+                    <option value="Interest">이자</option>
+                    <option value="Rent">월세</option>
+                    <option value="Other">기타</option>
+                  </select>
+                </label>
+                <label>
+                  <span>소유자</span>
+                  <select
+                    value={form.owner}
+                    onChange={(e) => handleFormChange('owner', e.target.value as Owner)}
+                  >
+                    <option value="Husband">엄기훈</option>
+                    <option value="Wife">최수진</option>
+                    <option value="Joint">공동/기타</option>
+                  </select>
+                </label>
+              </div>
+              <div className="form-row">
+                <label className="form-row-full">
+                  <span>시장 (선택)</span>
+                  <input
+                    type="text"
+                    value={form.market}
+                    onChange={(e) => handleFormChange('market', e.target.value)}
+                    placeholder="예: KOSPI, NYSE, 국내은행"
+                  />
+                </label>
+              </div>
+
+              {formError && <div className="form-error">{formError}</div>}
+
+              <div className="form-actions">
+                <button type="button" className="btn-secondary" onClick={closeModal}>취소</button>
+                <button type="submit" className="btn-primary">추가</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

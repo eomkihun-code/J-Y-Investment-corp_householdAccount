@@ -216,11 +216,12 @@ function App() {
       {/* Grid wrapper for Middle Sections */}
       <div className="middle-section">
         {/* 2. Middle-Left Section */}
-        <MonthlyCashFlow 
-          cashFlows={incomeFlows} 
+        <MonthlyCashFlow
+          cashFlows={incomeFlows}
           exchangeRate={exchangeRate}
           targetMonth={targetMonth}
           onMonthChange={setTargetMonth}
+          onCashFlowsChange={handleIncomeUploaded}
         />
         
         {/* 3. Middle-Right Section */}
