@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [externalDateRange, setExternalDateRange] = useState<ExternalDateRange | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [cashFixedTotal, setCashFixedTotal] = useState(0);
 
   // 세션 정보 가져오기 및 데이터 로드
   useEffect(() => {
@@ -41,11 +42,27 @@ export default function Dashboard() {
       setSession(session);
       if (session) {
         fetchTransactions(session.user.id);
+        fetchCashFixedTotal(session.user.id);
       } else {
         setIsLoading(false);
       }
     });
   }, []);
+
+  const fetchCashFixedTotal = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('fixed_costs')
+        .select('amount, auto_transfer')
+        .eq('user_id', userId)
+        .in('auto_transfer', ['새마을', '우리은행', 'NH은행']);
+      if (error) throw error;
+      const total = (data || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+      setCashFixedTotal(total);
+    } catch (e) {
+      console.error('Failed to fetch cash fixed costs', e);
+    }
+  };
 
   const fetchTransactions = async (userId: string) => {
     try {
@@ -388,12 +405,13 @@ export default function Dashboard() {
             <section className="notranslate stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
               <div className="glass" style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
-                  <div style={{ padding: '10px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', color: 'var(--primary)' }}>
+                  <div style={{ padding: '10px', background: 'rgba(251, 146, 60, 0.1)', borderRadius: '12px', color: '#fb923c' }}>
                     <Wallet size={24} />
                   </div>
-                  <h3 style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: '500' }}>{stats.latestMonthStr} 순수익</h3>
+                  <h3 style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: '500' }}>현금 지출</h3>
                 </div>
-                <p className="stats-value" style={{ fontSize: '2.5rem', fontWeight: '700' }}>₩ {stats.currentNet.toLocaleString()}</p>
+                <p className="stats-value" style={{ fontSize: '2.5rem', fontWeight: '700', color: '#fb923c' }}>₩ {cashFixedTotal.toLocaleString()}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.5rem' }}>새마을 · 우리은행 · NH은행 고정지출 합계</p>
               </div>
 
               <div className="glass" style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}>
@@ -401,7 +419,7 @@ export default function Dashboard() {
                   <div style={{ padding: '10px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', color: 'var(--danger)' }}>
                     <ShoppingCart size={24} />
                   </div>
-                  <h3 style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: '500' }}>{stats.latestMonthStr} 지출</h3>
+                  <h3 style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: '500' }}>{stats.latestMonthStr} 카드 지출</h3>
                 </div>
                 <p className="stats-value" style={{ fontSize: '2rem', fontWeight: '600', color: 'var(--danger)' }}>₩ {stats.currentExpense.toLocaleString()}</p>
               </div>
