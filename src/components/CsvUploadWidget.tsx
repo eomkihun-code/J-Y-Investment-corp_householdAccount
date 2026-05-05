@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { FileSpreadsheet, CheckCircle, Database, FileText } from 'lucide-react';
+import { FileSpreadsheet, CheckCircle, Database, FileText, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import type { Transaction, TransactionType } from '../types/transaction';
@@ -8,6 +8,7 @@ interface ExcelUploadWidgetProps {
   onUploadSuccess: (transactions: Transaction[], fileName: string) => void;
   existingCount: number;
   uploadedFiles: string[];
+  onDeleteFile?: (fileName: string) => void;
 }
 
 // 추출된 로우 데이터를 정제하는 통합 함수 (사용자 요청: 완벽한 평탄화 및 방어 로직)
@@ -104,7 +105,7 @@ function refineData(rows: any[][]): Transaction[] {
   return transactions;
 }
 
-export default function CsvUploadWidget({ onUploadSuccess, existingCount, uploadedFiles }: ExcelUploadWidgetProps) {
+export default function CsvUploadWidget({ onUploadSuccess, existingCount, uploadedFiles, onDeleteFile }: ExcelUploadWidgetProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -215,14 +216,44 @@ export default function CsvUploadWidget({ onUploadSuccess, existingCount, upload
               {uploadedFiles.length > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                   {uploadedFiles.map((fname, idx) => (
-                    <span key={idx} style={{ 
+                    <span key={idx} className="uploaded-file-chip" style={{
                       display: 'inline-flex', alignItems: 'center', gap: '4px',
-                      fontSize: '0.78rem', color: 'var(--text-muted)', 
-                      background: 'rgba(255,255,255,0.05)', padding: '2px 8px', 
+                      fontSize: '0.78rem', color: 'var(--text-muted)',
+                      background: 'rgba(255,255,255,0.05)', padding: '2px 4px 2px 8px',
                       borderRadius: '4px', border: '1px solid var(--glass-border)'
                     }}>
                       <FileText size={12} />
-                      {fname}
+                      <span>{fname}</span>
+                      {onDeleteFile && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`"${fname}" 파일의 거래 내역을 모두 삭제할까요?`)) {
+                              onDeleteFile(fname);
+                            }
+                          }}
+                          title="이 파일의 거래 내역 삭제"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '18px', height: '18px', marginLeft: '2px',
+                            background: 'transparent', border: 'none',
+                            color: 'var(--text-muted)', cursor: 'pointer',
+                            borderRadius: '4px', padding: 0,
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)';
+                            e.currentTarget.style.color = 'var(--danger)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-muted)';
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
                     </span>
                   ))}
                 </div>

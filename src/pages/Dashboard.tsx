@@ -322,6 +322,28 @@ export default function Dashboard() {
     }
   };
 
+  const handleDeleteFile = async (fileName: string) => {
+    if (!session) return;
+    try {
+      setIsLoading(true);
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('file_name', fileName);
+      if (error) throw error;
+
+      setTransactions(prev => prev.filter(t => t.fileName !== fileName));
+      setUploadedFiles(prev => prev.filter(f => f !== fileName));
+      alert(`"${fileName}" 파일의 거래 내역이 삭제되었습니다.`);
+    } catch (e) {
+      console.error('Delete file failed', e);
+      alert('파일 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleDeleteSelected = async () => {
     if (selectedTransactionIds.length === 0 || !session) return;
     if (!confirm(`선택한 ${selectedTransactionIds.length}개의 내역을 삭제하시겠습니까?`)) return;
@@ -388,10 +410,11 @@ export default function Dashboard() {
       <div className="dashboard-main-layout" style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
         <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           <section>
-            <CsvUploadWidget 
-              onUploadSuccess={handleExcelUpload} 
+            <CsvUploadWidget
+              onUploadSuccess={handleExcelUpload}
               existingCount={transactions.length}
               uploadedFiles={uploadedFiles}
+              onDeleteFile={handleDeleteFile}
             />
           </section>
 
