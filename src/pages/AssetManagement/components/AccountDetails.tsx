@@ -108,7 +108,7 @@ const TxHistoryModal = ({ holding, onClose, onSave }: TxHistoryModalProps) => {
 // ── AddHoldingModal ──────────────────────────────────────────────────────────
 const AddHoldingModal = ({ onClose, onAdd }: { onClose: () => void; onAdd: (h: any) => void }) => {
   const today = new Date().toISOString().slice(0, 10);
-  const [form, setForm] = useState({ symbol: '', code: '', quantity: '', avgPrice: '', currency: 'KRW' as 'KRW' | 'USD' });
+  const [form, setForm] = useState({ symbol: '', code: '', date: today, quantity: '', avgPrice: '', currency: 'KRW' as 'KRW' | 'USD' });
   const [err, setErr] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -126,7 +126,7 @@ const AddHoldingModal = ({ onClose, onAdd }: { onClose: () => void; onAdd: (h: a
       avgPrice: price,
       currentPrice: price,
       currency: form.currency,
-      transactions: [{ date: today, type: '매수' as const, quantity: qty, price }],
+      transactions: [{ date: form.date, type: '매수' as const, quantity: qty, price }],
     });
     onClose();
   };
@@ -140,6 +140,10 @@ const AddHoldingModal = ({ onClose, onAdd }: { onClose: () => void; onAdd: (h: a
         </div>
         <form className="modal-body" onSubmit={handleSubmit}>
           <div className="tx-form" style={{ gridTemplateColumns: '1fr 1fr', gap: '12px', display: 'grid', padding: '16px 0' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              <span>매수일 *</span>
+              <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} required />
+            </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)' }}>
               <span>종목명 *</span>
               <input type="text" value={form.symbol} onChange={e => setForm(f => ({ ...f, symbol: e.target.value }))} placeholder="예: 삼성전자" required />
