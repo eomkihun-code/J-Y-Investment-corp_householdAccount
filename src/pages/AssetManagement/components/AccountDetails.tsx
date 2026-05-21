@@ -105,6 +105,75 @@ const TxHistoryModal = ({ holding, onClose, onSave }: TxHistoryModalProps) => {
     </div>
   );
 };
+// ── AddHoldingModal ──────────────────────────────────────────────────────────
+const AddHoldingModal = ({ onClose, onAdd }: { onClose: () => void; onAdd: (h: any) => void }) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const [form, setForm] = useState({ symbol: '', code: '', quantity: '', avgPrice: '', currency: 'KRW' as 'KRW' | 'USD' });
+  const [err, setErr] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const qty = parseFloat(form.quantity);
+    const price = parseFloat(form.avgPrice);
+    if (!form.symbol.trim() || isNaN(qty) || qty <= 0 || isNaN(price) || price <= 0) {
+      setErr('종목명, 수량, 평단가는 필수입니다.');
+      return;
+    }
+    onAdd({
+      symbol: form.symbol.trim(),
+      code: form.code.trim() || undefined,
+      quantity: qty,
+      avgPrice: price,
+      currentPrice: price,
+      currency: form.currency,
+      transactions: [{ date: today, type: '매수' as const, quantity: qty, price }],
+    });
+    onClose();
+  };
+
+  return (
+    <div className="tx-modal-overlay" onClick={onClose}>
+      <div className="tx-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>종목 추가</h3>
+          <button className="close-btn" onClick={onClose}>&times;</button>
+        </div>
+        <form className="modal-body" onSubmit={handleSubmit}>
+          <div className="tx-form" style={{ gridTemplateColumns: '1fr 1fr', gap: '12px', display: 'grid', padding: '16px 0' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              <span>종목명 *</span>
+              <input type="text" value={form.symbol} onChange={e => setForm(f => ({ ...f, symbol: e.target.value }))} placeholder="예: 삼성전자" required />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              <span>티커/코드 (선택)</span>
+              <input type="text" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} placeholder="예: 005930.KS" />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              <span>수량 *</span>
+              <input type="number" min="0" step="any" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder="0" required />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              <span>평단가 *</span>
+              <input type="number" min="0" step="any" value={form.avgPrice} onChange={e => setForm(f => ({ ...f, avgPrice: e.target.value }))} placeholder="0" required />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)', gridColumn: 'span 2' }}>
+              <span>통화</span>
+              <select value={form.currency} onChange={e => setForm(f => ({ ...f, currency: e.target.value as 'KRW' | 'USD' }))}>
+                <option value="KRW">KRW (원화)</option>
+                <option value="USD">USD (달러)</option>
+              </select>
+            </label>
+          </div>
+          {err && <div style={{ color: 'var(--negative-color)', fontSize: '12px', padding: '0 0 12px' }}>{err}</div>}
+          <div className="modal-footer" style={{ padding: '12px 0 0', display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color)' }}>
+            <button type="button" className="btn-secondary" onClick={onClose}>취소</button>
+            <button type="submit" className="btn-primary">추가</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 // ────────────────────────────────────────────────────────────────────────────
 
 const StockModal = ({ account, onClose, onAccountChange }: { account: Account, onClose: () => void, onAccountChange: (updated: Account) => void }) => {
@@ -113,6 +182,7 @@ const StockModal = ({ account, onClose, onAccountChange }: { account: Account, o
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [txHolding, setTxHolding] = useState<HoldingValuation | null>(null);
+  const [showAddHolding, setShowAddHolding] = useState(false);
 
   useEffect(() => {
     if (!account || !account.holdings) return;
@@ -153,8 +223,14 @@ const StockModal = ({ account, onClose, onAccountChange }: { account: Account, o
             )}
           </div>
           <div className="modal-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <button 
-              className="refresh-btn" 
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowAddHolding(true); }}
+              style={{ background: 'rgba(186,158,255,0.15)', color: 'var(--accent-primary)', border: '1px solid rgba(186,158,255,0.35)', borderRadius: '6px', padding: '4px 12px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+            >
+              ＋ 종목 추가
+            </button>
+            <button
+              className="refresh-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 setLoading(true);
@@ -234,6 +310,18 @@ const StockModal = ({ account, onClose, onAccountChange }: { account: Account, o
           )}
         </div>
       </div>
+      {showAddHolding && (
+        <AddHoldingModal
+          onClose={() => setShowAddHolding(false)}
+          onAdd={(newHolding) => {
+            const updatedHoldings = [...(account.holdings ?? []), newHolding];
+            const updatedAccount = { ...account, holdings: updatedHoldings };
+            onAccountChange(updatedAccount);
+            getValuedHoldings(updatedHoldings).then(res => setValuedHoldings(res));
+            setShowAddHolding(false);
+          }}
+        />
+      )}
       {txHolding && (
         <TxHistoryModal
           holding={txHolding}
