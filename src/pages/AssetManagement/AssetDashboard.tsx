@@ -229,7 +229,14 @@ function App() {
       </div>
 
       {/* 4. Bottom Section */}
-      <AccountDetails accounts={allAccounts} exchangeRate={exchangeRate} />
+      <AccountDetails
+        accounts={allAccounts}
+        exchangeRate={exchangeRate}
+        onStockAccountsChange={(updatedStocks) => {
+          setStockAccounts(updatedStocks);
+          saveToSupabase(cashAccounts, updatedStocks, incomeFlows, manualAccounts);
+        }}
+      />
 
     </div>
     </div>

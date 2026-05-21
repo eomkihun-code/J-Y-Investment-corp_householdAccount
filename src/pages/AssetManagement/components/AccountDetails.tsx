@@ -1,20 +1,118 @@
 import { useState, useEffect } from 'react';
 import '../styles/AccountDetails.css';
-import type { Account, Owner } from '../types';
+import type { Account, Owner, Transaction } from '../types';
 import { getValuedHoldings, formatCurrency, setUIErrorCallback } from '../utils/stockPriceService';
+import type { HoldingValuation } from '../utils/stockPriceService';
 
 interface Props {
   accounts: Account[];
   exchangeRate: number;
+  onStockAccountsChange?: (updated: Account[]) => void;
 }
 
 type TabType = 'All' | 'Husband' | 'Wife';
 
-const StockModal = ({ account, onClose }: { account: Account, onClose: () => void }) => {
+// ── TxHistoryModal ──────────────────────────────────────────────────────────
+interface TxHistoryModalProps {
+  holding: HoldingValuation;
+  accountName: string;
+  onClose: () => void;
+  onSave: (updatedTransactions: Transaction[]) => void;
+}
+
+const TxHistoryModal = ({ holding, onClose, onSave }: TxHistoryModalProps) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const [transactions, setTransactions] = useState<Transaction[]>(holding.transactions ?? []);
+  const [form, setForm] = useState<{ date: string; type: '매수' | '매도'; quantity: string; price: string }>({
+    date: today,
+    type: '매수',
+    quantity: '',
+    price: '',
+  });
+
+  const handleAdd = () => {
+    const qty = parseFloat(form.quantity);
+    const price = parseFloat(form.price);
+    if (!qty || !price || qty <= 0 || price <= 0) return;
+    const newTx: Transaction = { date: form.date, type: form.type, quantity: qty, price };
+    const updated = [...transactions, newTx].sort((a, b) => a.date.localeCompare(b.date));
+    setTransactions(updated);
+    setForm(f => ({ ...f, quantity: '', price: '' }));
+  };
+
+  const handleDelete = (idx: number) => {
+    if (!window.confirm('이 거래 내역을 삭제할까요?')) return;
+    setTransactions(transactions.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div className="tx-modal-overlay" onClick={onClose}>
+      <div className="tx-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>{holding.symbol} 거래 이력</h3>
+          <button className="close-btn" onClick={onClose}>&times;</button>
+        </div>
+        <div className="modal-body">
+          {transactions.length === 0 ? (
+            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px 0' }}>거래 내역이 없습니다.</p>
+          ) : (
+            <div className="table-responsive">
+              <table className="tx-table">
+                <thead>
+                  <tr>
+                    <th>날짜</th>
+                    <th>구분</th>
+                    <th>수량</th>
+                    <th>단가 ({holding.currency})</th>
+                    <th>금액</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.map((tx, i) => (
+                    <tr key={i} className={tx.type === '매수' ? 'tx-row-buy' : 'tx-row-sell'}>
+                      <td>{tx.date}</td>
+                      <td>{tx.type}</td>
+                      <td>{tx.quantity}</td>
+                      <td>{tx.price.toLocaleString()}</td>
+                      <td>{(tx.quantity * tx.price).toLocaleString()}</td>
+                      <td>
+                        <button className="tx-delete-btn" onClick={() => handleDelete(i)} title="삭제">🗑</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="tx-form">
+            <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+            <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as '매수' | '매도' }))}>
+              <option value="매수">매수</option>
+              <option value="매도">매도</option>
+            </select>
+            <input type="number" placeholder="수량" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} />
+            <input type="number" placeholder={`단가 (${holding.currency})`} min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} />
+            <button className="btn-primary" onClick={handleAdd}>추가</button>
+          </div>
+        </div>
+        <div className="modal-footer" style={{ padding: '12px 24px', display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color)' }}>
+          <button className="btn-secondary" onClick={onClose}>취소</button>
+          <button className="btn-primary" onClick={() => { onSave(transactions); onClose(); }}>저장</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+// ────────────────────────────────────────────────────────────────────────────
+
+const StockModal = ({ account, onClose, onAccountChange }: { account: Account, onClose: () => void, onAccountChange: (updated: Account) => void }) => {
   const [valuedHoldings, setValuedHoldings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
+  const [txHolding, setTxHolding] = useState<HoldingValuation | null>(null);
 
   useEffect(() => {
     if (!account || !account.holdings) return;
@@ -105,6 +203,7 @@ const StockModal = ({ account, onClose }: { account: Account, onClose: () => voi
                     <th>평가손익</th>
                     <th>수익률</th>
                     <th>평가금액</th>
+                    <th>거래이력</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -124,6 +223,9 @@ const StockModal = ({ account, onClose }: { account: Account, onClose: () => voi
                         {h.returnRate.toFixed(2)}%
                       </td>
                       <td className="text-bold">{formatCurrency(h.valuation, h.currency)}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <button onClick={() => setTxHolding(h)} className="tx-history-btn" title="거래이력">📋</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -132,6 +234,33 @@ const StockModal = ({ account, onClose }: { account: Account, onClose: () => voi
           )}
         </div>
       </div>
+      {txHolding && (
+        <TxHistoryModal
+          holding={txHolding}
+          accountName={account.name}
+          onClose={() => setTxHolding(null)}
+          onSave={(updatedTxs) => {
+            const updatedHoldings = (account.holdings ?? []).map(h => {
+              if (h.symbol !== txHolding.symbol) return h;
+              const buys = updatedTxs.filter(t => t.type === '매수');
+              const sells = updatedTxs.filter(t => t.type === '매도');
+              const totalBuyQty = buys.reduce((s, t) => s + t.quantity, 0);
+              const totalSellQty = sells.reduce((s, t) => s + t.quantity, 0);
+              const newQty = Math.max(0, totalBuyQty - totalSellQty);
+              const totalCost = buys.reduce((s, t) => s + t.quantity * t.price, 0);
+              const newAvgPrice = totalBuyQty > 0 ? totalCost / totalBuyQty : h.avgPrice;
+              return { ...h, transactions: updatedTxs, quantity: newQty, avgPrice: newAvgPrice };
+            });
+            const updatedAccount = { ...account, holdings: updatedHoldings };
+            onAccountChange(updatedAccount);
+            // refresh valuedHoldings
+            getValuedHoldings(updatedHoldings).then(res => {
+              setValuedHoldings(res);
+            });
+            setTxHolding(null);
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -155,7 +284,7 @@ const getInstitutionKey = (name: string): string => {
   return cleaned.split(/[\s_]/)[0] || name;
 };
 
-export default function AccountDetails({ accounts, exchangeRate }: Props) {
+export default function AccountDetails({ accounts, exchangeRate, onStockAccountsChange }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>('All');
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
 
@@ -293,6 +422,10 @@ export default function AccountDetails({ accounts, exchangeRate }: Props) {
         <StockModal
           account={selectedAccount}
           onClose={() => setSelectedAccount(null)}
+          onAccountChange={(updatedAccount) => {
+            const updatedAccounts = accounts.map(a => a.id === updatedAccount.id ? updatedAccount : a);
+            onStockAccountsChange?.(updatedAccounts.filter(a => a.type === 'Stock'));
+          }}
         />
       )}
     </div>
