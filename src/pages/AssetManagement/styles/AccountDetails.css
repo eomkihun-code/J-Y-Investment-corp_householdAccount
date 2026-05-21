@@ -221,14 +221,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(6, 14, 32, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(6, 14, 32, 0.55);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding-top: 48px;
   z-index: 2000;
   animation: fadeIn 0.2s ease;
+  overflow-y: auto;
 }
 
 .stock-modal-content {
@@ -236,8 +236,8 @@
   border: 1px solid var(--border-color);
   border-radius: 20px;
   width: 90%;
-  max-width: 800px;
-  max-height: 85vh;
+  max-width: 860px;
+  max-height: calc(100vh - 80px);
   display: flex;
   flex-direction: column;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 4px 16px rgba(0, 0, 0, 0.3);
@@ -376,14 +376,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(6, 14, 32, 0.82);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(6, 14, 32, 0.65);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding-top: 60px;
   z-index: 3000;
   animation: fadeIn 0.2s ease;
+  overflow-y: auto;
 }
 
 .tx-modal {
