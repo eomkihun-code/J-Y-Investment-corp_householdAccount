@@ -25,7 +25,8 @@ const TICKER_MAP: Record<string, string> = {
   "SPY": "SPY",
   "TLT": "TLT",
   "SGOV": "SGOV",
-  "CRCL": "CRCL"
+  "CRCL": "CRCL",
+  "대한항공": "003490.KS"
 };
 
 // Global error listener for UI display
