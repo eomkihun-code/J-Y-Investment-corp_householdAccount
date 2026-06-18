@@ -319,10 +319,15 @@ const StockModal = ({ account, onClose, onAccountChange }: { account: Account, o
           onClose={() => setShowAddHolding(false)}
           onAdd={(newHolding) => {
             const updatedHoldings = [...(account.holdings ?? []), newHolding];
-            const updatedAccount = { ...account, holdings: updatedHoldings };
-            onAccountChange(updatedAccount);
-            getValuedHoldings(updatedHoldings).then(res => setValuedHoldings(res));
+            // 1차: holdings 먼저 안전하게 저장 (시세 조회 실패해도 종목은 보존)
+            onAccountChange({ ...account, holdings: updatedHoldings });
             setShowAddHolding(false);
+            // 2차: 시세 평가 후 balance 재계산해서 다시 저장
+            getValuedHoldings(updatedHoldings).then(res => {
+              setValuedHoldings(res);
+              const balance = res.reduce((s, h) => s + (h.valuation || 0), 0);
+              onAccountChange({ ...account, holdings: updatedHoldings, balance });
+            });
           }}
         />
       )}
@@ -515,6 +520,8 @@ export default function AccountDetails({ accounts, exchangeRate, onStockAccounts
           account={selectedAccount}
           onClose={() => setSelectedAccount(null)}
           onAccountChange={(updatedAccount) => {
+            // 모달이 들고 있는 계좌 상태도 같이 갱신해야 다음 작업이 최신 holdings 기준으로 동작 (stale 덮어쓰기 방지)
+            setSelectedAccount(updatedAccount);
             const updatedAccounts = accounts.map(a => a.id === updatedAccount.id ? updatedAccount : a);
             onStockAccountsChange?.(updatedAccounts.filter(a => a.type === 'Stock'));
           }}
