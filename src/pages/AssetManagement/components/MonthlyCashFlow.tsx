@@ -3,6 +3,7 @@ import { Plus, Trash2, X } from 'lucide-react';
 import '../styles/MonthlyCashFlow.css';
 import type { CashFlow, MonthlyTrend, Owner } from '../types';
 import { INCOME_ITEM_LOOKUP, INCOME_MARKETS, findIncomeItem, type IncomeMarket } from '../data/incomeLookup';
+import { formatNumberInput, sanitizeNumberInput, parseNumberInput } from '../../../lib/numberInput';
 
 interface Props {
   cashFlows: CashFlow[];
@@ -225,7 +226,7 @@ export default function MonthlyCashFlow({ cashFlows, exchangeRate, targetMonth, 
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const amountNum = parseFloat(form.amount);
+    const amountNum = parseNumberInput(form.amount);
     const itemName = form.itemName.trim();
     if (!form.date || !itemName || isNaN(amountNum) || amountNum <= 0) {
       setFormError('날짜, 항목, 0보다 큰 금액은 필수입니다.');
@@ -489,12 +490,10 @@ export default function MonthlyCashFlow({ cashFlows, exchangeRate, targetMonth, 
                 <label>
                   <span>금액</span>
                   <input
-                    type="number"
+                    type="text"
                     inputMode="decimal"
-                    step="0.01"
-                    min="0"
-                    value={form.amount}
-                    onChange={(e) => handleFormChange('amount', e.target.value)}
+                    value={formatNumberInput(form.amount)}
+                    onChange={(e) => handleFormChange('amount', sanitizeNumberInput(e.target.value))}
                     placeholder="숫자만 입력"
                     required
                   />

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import '../styles/ManualAssetEditor.css';
 import type { Account, Owner, AssetType } from '../types';
+import { formatNumberInput, sanitizeNumberInput } from '../../../lib/numberInput';
 
 interface Props {
   accounts: Account[];
@@ -70,9 +71,10 @@ export default function ManualAssetEditor({ accounts, onUpdate, onClose }: Props
                 <div className="input-group">
                   <label>금액 (원)</label>
                   <input 
-                    type="number" 
-                    value={acc.balance} 
-                    onChange={e => handleUpdateField(acc.id, 'balance', Number(e.target.value))}
+                    type="text"
+                    inputMode="numeric"
+                    value={formatNumberInput(String(acc.balance ?? ''))} 
+                    onChange={e => handleUpdateField(acc.id, 'balance', Number(sanitizeNumberInput(e.target.value, false) || 0))}
                   />
                 </div>
 

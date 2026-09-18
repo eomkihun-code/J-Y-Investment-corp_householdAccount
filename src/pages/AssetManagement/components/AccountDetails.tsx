@@ -3,6 +3,7 @@ import '../styles/AccountDetails.css';
 import type { Account, Owner, Transaction } from '../types';
 import { getValuedHoldings, formatCurrency, setUIErrorCallback } from '../utils/stockPriceService';
 import type { HoldingValuation } from '../utils/stockPriceService';
+import { formatNumberInput, sanitizeNumberInput } from '../../../lib/numberInput';
 
 interface Props {
   accounts: Account[];
@@ -93,7 +94,7 @@ const TxHistoryModal = ({ holding, onClose, onSave }: TxHistoryModalProps) => {
               <option value="매도">매도</option>
             </select>
             <input type="number" placeholder="수량" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} />
-            <input type="number" placeholder={`단가 (${holding.currency})`} min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} />
+            <input type="text" inputMode="decimal" placeholder={`단가 (${holding.currency})`} value={formatNumberInput(form.price)} onChange={e => setForm(f => ({ ...f, price: sanitizeNumberInput(e.target.value) }))} />
             <button className="btn-primary" onClick={handleAdd}>추가</button>
           </div>
         </div>
@@ -158,7 +159,7 @@ const AddHoldingModal = ({ onClose, onAdd }: { onClose: () => void; onAdd: (h: a
             </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)' }}>
               <span>평단가 *</span>
-              <input type="number" min="0" step="any" value={form.avgPrice} onChange={e => setForm(f => ({ ...f, avgPrice: e.target.value }))} placeholder="0" required />
+              <input type="text" inputMode="decimal" value={formatNumberInput(form.avgPrice)} onChange={e => setForm(f => ({ ...f, avgPrice: sanitizeNumberInput(e.target.value) }))} placeholder="0" required />
             </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--text-secondary)', gridColumn: 'span 2' }}>
               <span>통화</span>

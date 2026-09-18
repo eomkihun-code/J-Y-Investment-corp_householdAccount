@@ -3,6 +3,7 @@ import { Landmark, ChevronDown, ChevronUp, CreditCard, Table, Plus, Trash2, X, F
 import type { Transaction } from '../types/transaction';
 import { supabase } from '../lib/supabaseClient';
 import * as XLSX from 'xlsx';
+import { formatNumberInput, sanitizeNumberInput } from '../lib/numberInput';
 
 interface BudgetManagerProps {
   transactions: Transaction[];
@@ -400,11 +401,12 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>금액</label>
             <input 
-              type="number"
+              type="text"
+              inputMode="numeric"
               className="input-field"
               placeholder="금액"
-              value={newCost.amount || ''}
-              onChange={e => setNewCost({...newCost, amount: parseInt(e.target.value) || 0})}
+              value={formatNumberInput(String(newCost.amount || ''))}
+              onChange={e => setNewCost({...newCost, amount: parseInt(sanitizeNumberInput(e.target.value, false)) || 0})}
               required
             />
           </div>
@@ -543,7 +545,7 @@ export default function BudgetManager({ transactions: _transactions }: BudgetMan
                           <input className="input-field" style={{ padding: '4px 8px', fontSize: '0.8rem' }} value={editCost.note || ''} onChange={e => setEditCost({...editCost, note: e.target.value})} placeholder="비고" />
                         </div>
                         <div>
-                          <input type="number" className="input-field" style={{ padding: '4px 8px', fontSize: '0.9rem', width: '100px' }} value={editCost.amount || ''} onChange={e => setEditCost({...editCost, amount: parseInt(e.target.value) || 0})} placeholder="금액" />
+                          <input type="text" inputMode="numeric" className="input-field" style={{ padding: '4px 8px', fontSize: '0.9rem', width: '100px' }} value={formatNumberInput(String(editCost.amount || ''))} onChange={e => setEditCost({...editCost, amount: parseInt(sanitizeNumberInput(e.target.value, false)) || 0})} placeholder="금액" />
                         </div>
                         <div className="mobile-hide">
                           <select className="input-field" style={{ padding: '4px 8px', fontSize: '0.8rem' }} value={editCost.autoTransfer || '기타'} onChange={e => setEditCost({...editCost, autoTransfer: e.target.value})}>
