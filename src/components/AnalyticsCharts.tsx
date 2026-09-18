@@ -36,7 +36,7 @@ export default function AnalyticsCharts({
   onCategoryClick,
   onBarClick 
 }: AnalyticsChartsProps) {
-  const version = "v1.2.8-stable"; // Version stamp for verification
+  const version = "v1.2.9-stable"; // Version stamp for verification
   const [duration, setDuration] = useState<ChartDuration>('12');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -91,11 +91,13 @@ export default function AnalyticsCharts({
     const expenses = filteredTransactions.filter(t => t.type === 'expense');
     const categories: Record<string, number> = {};
     expenses.forEach(t => {
-      categories[t.category] = (categories[t.category] || 0) + Math.abs(t.amount);
+      // 취소 내역(-값)은 그대로 합산해 차감되도록 함 (Math.abs 사용 시 오히려 가산됨)
+      categories[t.category] = (categories[t.category] || 0) + t.amount;
     });
 
     return Object.entries(categories)
       .map(([name, value]) => ({ name, value }))
+      .filter(c => c.value > 0) // 취소로 상쇄되어 0 이하가 된 카테고리는 제외
       .sort((a, b) => b.value - a.value);
   }, [filteredTransactions]);
 
