@@ -496,3 +496,42 @@
   transition: background 0.15s;
 }
 .btn-secondary:hover { background: var(--surface-hover); }
+
+/* ── 거래 이력 패널: 넓은 화면에서는 종목 목록 옆에 나란히 ──────────────── */
+/* 기존에는 보유 종목 모달 위에 겹쳐 떠서 어떤 종목을 수정 중인지 보이지 않았다. */
+@media (min-width: 1100px) {
+  /* 거래 이력이 열리면 종목 목록을 왼쪽으로 밀어 자리를 만든다 */
+  .stock-modal-overlay.has-side-panel {
+    justify-content: flex-start;
+    padding-left: 24px;
+    /* 패널 폭(560px) + 좌우 여백만큼 비워둔다 */
+    padding-right: calc(560px + 48px);
+  }
+
+  .stock-modal-overlay.has-side-panel .stock-modal-content {
+    width: 100%;
+    max-width: 860px;
+  }
+
+  /* 패널 뒤를 어둡게 덮지 않아 종목 목록이 그대로 보인다.
+     클릭도 통과시켜 왼쪽 목록을 계속 조작할 수 있게 한다. */
+  .tx-modal-overlay {
+    background-color: transparent;
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding: 48px 24px;
+    pointer-events: none;
+  }
+
+  .tx-modal {
+    pointer-events: auto;
+    width: 560px;
+    max-width: none;
+    max-height: calc(100vh - 96px);
+  }
+}
+
+/* 배경이 비치지 않도록 불투명 배경을 명시한다 (변수 미해석 대비 폴백 포함) */
+.tx-modal {
+  background: var(--surface-color, #0f1930);
+}

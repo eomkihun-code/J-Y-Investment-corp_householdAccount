@@ -216,7 +216,7 @@ const StockModal = ({ account, onClose, onAccountChange }: { account: Account, o
   }, [account.id, account.name]);
 
   return (
-    <div className="stock-modal-overlay" onClick={onClose}>
+    <div className={`stock-modal-overlay${txHolding ? ' has-side-panel' : ''}`} onClick={onClose}>
       <div className="stock-modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <div>
