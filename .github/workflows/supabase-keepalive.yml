@@ -1,11 +1,14 @@
 name: Supabase Keep-Alive
 
-# 무료 플랜은 7일간 활동이 없으면 프로젝트를 자동 일시정지한다.
-# 3일마다 가벼운 REST 쿼리를 날려 활동을 발생시켜 정지를 막는다.
+# 무료 플랜은 7일간 "충분한 활동"이 없으면 프로젝트를 자동 일시정지한다.
 #
-# 주의: keep-alive는 '비활동으로 인한 정지'만 막는다.
-# 무료 플랜의 활성 프로젝트 개수 한도를 넘겨서 정지되는 경우는 막지 못하므로,
-# ping이 성공하는데도 프로젝트가 멈춘다면 Supabase 대시보드에서 프로젝트 수를 확인할 것.
+# 중요: anon 키로 보내는 읽기 핑은 RLS에 막혀 빈 배열([])만 돌려받기 때문에
+# Supabase가 활동으로 집계하지 않는다. (실제로 30회 연속 성공했는데도 정지됨)
+# 그래서 service_role 키로 keepalive 테이블에 실제 쓰기를 발생시킨다.
+#
+# 사전 준비:
+#   1) supabase_keepalive.sql 을 Supabase SQL Editor에서 1회 실행
+#   2) gh secret set SUPABASE_SERVICE_ROLE_KEY
 on:
   schedule:
     - cron: '0 0 */3 * *' # 3일마다 00:00 UTC (KST 09:00)
@@ -15,13 +18,14 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase REST API
+      - name: Write to keepalive table
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "::error::SUPABASE_URL / SUPABASE_ANON_KEY 시크릿이 설정되지 않았습니다."
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::error::SUPABASE_URL 시크릿이 설정되지 않았습니다."
             exit 1
           fi
 
@@ -30,9 +34,27 @@ jobs:
           project_ref=$(echo "$SUPABASE_URL" | sed -E 's#https?://([^.]+)\..*#\1#')
           echo "target project ref: $project_ref"
 
-          code=$(curl -sS -o /tmp/body -w '%{http_code}' --max-time 30 \
-            "$SUPABASE_URL/rest/v1/user_asset_data?select=user_id&limit=1" \
-            -H "apikey: $SUPABASE_ANON_KEY") || code=000
+          if [ -n "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "mode: write (service_role)"
+            key="$SUPABASE_SERVICE_ROLE_KEY"
+            now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+            code=$(curl -sS -o /tmp/body -w '%{http_code}' --max-time 30 \
+              -X POST "$SUPABASE_URL/rest/v1/keepalive" \
+              -H "apikey: $key" \
+              -H "Authorization: Bearer $key" \
+              -H "Content-Type: application/json" \
+              -H "Prefer: resolution=merge-duplicates,return=representation" \
+              -d "{\"id\":1,\"pinged_at\":\"$now\",\"note\":\"github-actions\"}") || code=000
+          else
+            # 폴백: service_role 키가 없으면 기존 anon 읽기 핑.
+            # 정지를 확실히 막아주지는 못하므로 경고를 남긴다.
+            echo "::warning::SUPABASE_SERVICE_ROLE_KEY가 없어 anon 읽기 핑으로 대체합니다. 이 방식은 자동 일시정지를 막지 못할 수 있습니다."
+            echo "mode: read (anon fallback)"
+            code=$(curl -sS -o /tmp/body -w '%{http_code}' --max-time 30 \
+              "$SUPABASE_URL/rest/v1/user_asset_data?select=user_id&limit=1" \
+              -H "apikey: $SUPABASE_ANON_KEY") || code=000
+          fi
 
           body=$(cat /tmp/body 2>/dev/null)
           echo "HTTP $code"
@@ -44,18 +66,23 @@ jobs:
             exit 1
           fi
 
-          # 복구 직후나 정지 전환 중에는 502/503이 뜬다. 200이어도 에러 본문이면 실패로 본다.
-          if [ "$code" != "200" ]; then
-            echo "::error::Supabase ping 실패 (HTTP $code). 프로젝트가 이미 일시정지됐거나 키가 만료됐을 수 있습니다."
-            exit 1
-          fi
-
-          case "$body" in
-            *'"message"'*|*'Bad Gateway'*|*'PGRST'*)
-              echo "::error::HTTP 200이지만 응답이 정상 데이터가 아닙니다: $body"
+          case "$code" in
+            20*) ;;
+            404)
+              echo "::error::keepalive 테이블이 없습니다. supabase_keepalive.sql 을 SQL Editor에서 실행해 주세요."
+              exit 1
+              ;;
+            *)
+              echo "::error::Supabase ping 실패 (HTTP $code). 프로젝트가 이미 일시정지됐거나 키가 만료됐을 수 있습니다."
               exit 1
               ;;
           esac
 
-          # RLS로 anon은 빈 배열([])을 받지만 DB 쿼리는 실행되므로 활동으로 집계된다.
+          case "$body" in
+            *'Bad Gateway'*|*'PGRST'*)
+              echo "::error::HTTP $code 이지만 응답이 에러입니다: $body"
+              exit 1
+              ;;
+          esac
+
           echo "✅ Supabase 프로젝트($project_ref) 활성 상태 유지됨"
